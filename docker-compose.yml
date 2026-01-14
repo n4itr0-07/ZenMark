@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  zenmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zenmark
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+# Usage:
+# ------
+# Start:     docker-compose up -d
+# Stop:      docker-compose down
+# Rebuild:   docker-compose up -d --build
+# Logs:      docker-compose logs -f

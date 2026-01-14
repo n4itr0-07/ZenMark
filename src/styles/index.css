@@ -1,0 +1,109 @@
+:root {
+  /* Core Colors - Modern Dark/Glass Theme */
+  --bg-app: #0f1115;
+  --bg-sidebar: #161b22;
+  --bg-editor: #0f1115;
+  --bg-card: rgba(30, 32, 40, 0.6);
+  --bg-card-hover: rgba(40, 44, 55, 0.8);
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(66, 153, 225, 0.4);
+  
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --accent-color: #8b5cf6;
+  
+  --danger: #ef4444;
+  --success: #10b981;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(22, 27, 34, 0.7);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  --backdrop-blur: blur(10px);
+  
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
+  
+  /* Spacing */
+  --header-height: 60px;
+  --sidebar-width: 280px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* App-like feel */
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+}
+.icon-btn.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary-color);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
