@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Github, Heart, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Github, Heart, ExternalLink, FileText, Eye, Pin, Sun, Upload, Download, Keyboard, Palette } from 'lucide-react';
 
 const AboutPage = ({ onBack }) => {
     return (
@@ -7,7 +7,7 @@ const AboutPage = ({ onBack }) => {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            background: 'var(--bg-primary)',
+            background: 'var(--bg-app)',
             overflow: 'auto',
         }}>
             {/* Header */}
@@ -17,6 +17,7 @@ const AboutPage = ({ onBack }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '16px',
+                background: 'var(--bg-sidebar)',
             }}>
                 <button
                     onClick={onBack}
@@ -44,14 +45,14 @@ const AboutPage = ({ onBack }) => {
                 }}>
                     <h2 style={{
                         fontSize: '2.5rem',
-                        color: 'var(--text-primary)',
+                        color: 'var(--primary-color)',
                         marginBottom: '16px',
                         fontWeight: 700,
                     }}>
                         ZenMark
                     </h2>
-                    <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>
-                        A professional, offline-capable markdown note-taking application
+                    <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
+                        A modern, offline-capable markdown note-taking app
                     </p>
                 </div>
 
@@ -60,13 +61,12 @@ const AboutPage = ({ onBack }) => {
                     <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
                         What is ZenMark?
                     </h3>
-                    <p style={{ marginBottom: '16px' }}>
-                        ZenMark is a modern, privacy-focused note-taking application designed for developers, writers, and anyone who loves Markdown.
-                        All your notes are stored locally in your browser using IndexedDB — no accounts, no servers, no data collection.
+                    <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
+                        ZenMark is a privacy-focused note-taking application designed for developers, writers, and anyone who loves Markdown.
+                        All your notes are stored locally in your browser — <strong style={{ color: 'var(--text-primary)' }}>no accounts, no servers, no data collection</strong>.
                     </p>
-                    <p>
-                        Built with React and designed with a beautiful dark glassmorphism theme, ZenMark provides a distraction-free
-                        writing experience with powerful markdown features.
+                    <p style={{ color: 'var(--text-secondary)' }}>
+                        Built as a Progressive Web App (PWA), ZenMark works offline and can be installed on your device just like a native app.
                     </p>
                 </section>
 
@@ -81,27 +81,123 @@ const AboutPage = ({ onBack }) => {
                         gap: '16px',
                     }}>
                         {[
-                            { title: 'Full Markdown Support', desc: 'Headers, lists, code blocks, tables, and more' },
-                            { title: 'Live Preview', desc: 'See your formatted content as you type' },
-                            { title: 'GitHub-Flavored Alerts', desc: 'Support for [!NOTE], [!TIP], [!WARNING], etc.' },
-                            { title: 'Syntax Highlighting', desc: 'Beautiful code highlighting for 180+ languages' },
-                            { title: 'Export Options', desc: 'Download as .md, .txt, or PDF' },
-                            { title: 'Works Offline', desc: 'No internet required after first load' },
-                            { title: 'Privacy First', desc: 'All data stays in your browser' },
-                            { title: 'Dark Theme', desc: 'Easy on the eyes, day or night' },
+                            { icon: FileText, title: 'Full Markdown Support', desc: 'Headers, lists, code blocks, tables, and more' },
+                            { icon: Eye, title: 'Live Preview', desc: 'Split view to see formatted content as you type' },
+                            { icon: Palette, title: 'Syntax Highlighting', desc: 'Beautiful code highlighting for 60+ languages' },
+                            { icon: Pin, title: 'Pin Notes', desc: 'Keep important notes at the top of your list' },
+                            { icon: Sun, title: 'Light & Dark Themes', desc: 'Switch themes to match your preference' },
+                            { icon: Upload, title: 'Import Files', desc: 'Import .md and .txt files directly' },
+                            { icon: Download, title: 'Export & Backup', desc: 'Download notes or backup everything as JSON' },
+                            { icon: Keyboard, title: 'Keyboard Shortcuts', desc: 'Quick actions for power users' },
                         ].map((feature, i) => (
                             <div key={i} style={{
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'var(--bg-card)',
                                 padding: '16px',
                                 borderRadius: '8px',
                                 border: '1px solid var(--border-subtle)',
                             }}>
-                                <h4 style={{ color: 'var(--text-primary)', margin: '0 0 8px', fontSize: '1rem' }}>
-                                    {feature.title}
-                                </h4>
-                                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <feature.icon size={18} color="var(--primary-color)" />
+                                    <h4 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1rem' }}>
+                                        {feature.title}
+                                    </h4>
+                                </div>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                                     {feature.desc}
                                 </p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* How to Use Section */}
+                <section style={{ marginBottom: '40px' }}>
+                    <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
+                        How to Use
+                    </h3>
+                    <div style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-subtle)',
+                        overflow: 'hidden',
+                    }}>
+                        {[
+                            { step: '1', title: 'Create a Note', desc: 'Click the + button in the sidebar or press Alt+N' },
+                            { step: '2', title: 'Write in Markdown', desc: 'Use the editor to write. Bold with **text**, italic with *text*, code with `code`' },
+                            { step: '3', title: 'Preview Your Work', desc: 'Click the eye icon to preview, or use split view for side-by-side editing' },
+                            { step: '4', title: 'Pin Important Notes', desc: 'Click the pin icon on any note to keep it at the top' },
+                            { step: '5', title: 'Export Your Notes', desc: 'Download individual notes as .md or backup all notes using the download icon' },
+                        ].map((item, i) => (
+                            <div key={i} style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '16px',
+                                padding: '16px',
+                                borderBottom: i < 4 ? '1px solid var(--border-subtle)' : 'none',
+                            }}>
+                                <div style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '50%',
+                                    background: 'var(--primary-color)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 600,
+                                    fontSize: '0.85rem',
+                                    flexShrink: 0,
+                                }}>
+                                    {item.step}
+                                </div>
+                                <div>
+                                    <h4 style={{ color: 'var(--text-primary)', margin: '0 0 4px', fontSize: '1rem' }}>
+                                        {item.title}
+                                    </h4>
+                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Keyboard Shortcuts Section */}
+                <section style={{ marginBottom: '40px' }}>
+                    <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
+                        Keyboard Shortcuts
+                    </h3>
+                    <div style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-subtle)',
+                        overflow: 'hidden',
+                    }}>
+                        {[
+                            { keys: 'Ctrl + S', action: 'Save note' },
+                            { keys: 'Alt + N', action: 'Create new note' },
+                            { keys: 'Alt + T', action: 'Toggle light/dark theme' },
+                        ].map((shortcut, i) => (
+                            <div key={i} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '12px 16px',
+                                borderBottom: i < 2 ? '1px solid var(--border-subtle)' : 'none',
+                            }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>{shortcut.action}</span>
+                                <kbd style={{
+                                    background: 'var(--bg-sidebar)',
+                                    padding: '4px 10px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.85rem',
+                                    fontFamily: 'var(--font-mono)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid var(--border-subtle)',
+                                }}>
+                                    {shortcut.keys}
+                                </kbd>
                             </div>
                         ))}
                     </div>
@@ -112,9 +208,8 @@ const AboutPage = ({ onBack }) => {
                     <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
                         Contribute
                     </h3>
-                    <p style={{ marginBottom: '16px' }}>
-                        ZenMark is open source and we welcome contributions! Whether you want to report a bug, suggest a feature,
-                        or submit a pull request, we'd love to hear from you.
+                    <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
+                        ZenMark is open source! Contributions, bug reports, and feature requests are welcome.
                     </p>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <a
@@ -164,7 +259,7 @@ const AboutPage = ({ onBack }) => {
                     textAlign: 'center',
                     paddingTop: '32px',
                     borderTop: '1px solid var(--border-subtle)',
-                    color: 'var(--text-muted)',
+                    color: 'var(--text-secondary)',
                     fontSize: '0.9rem',
                 }}>
                     <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>

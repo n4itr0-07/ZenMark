@@ -1,68 +1,33 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.css';
-import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List } from 'lucide-react';
 
-const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible }) => {
+const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark' }) => {
     const [viewMode, setViewMode] = useState('split');
-    const [htmlContent, setHtmlContent] = useState('');
-    const previewRef = useRef(null);
+    const [copiedCode, setCopiedCode] = useState(null);
+    const textareaRef = useRef(null);
 
-    // Transform GFM alerts
-    const transformAlerts = (content) => {
-        const alertRegex = /^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n((?:>.*\n?)*)/gim;
-        return content.replace(alertRegex, (match, type, body) => {
-            const cleanBody = body.replace(/^>\s?/gm, '').trim();
-            return `<div class="markdown-alert markdown-alert-${type.toLowerCase()}"><p class="markdown-alert-title">${type.toUpperCase()}</p>\n\n${cleanBody}\n\n</div>\n`;
-        });
-    };
+    // Calculate word, character, and line count
+    const { wordCount, charCount, lineCount } = useMemo(() => {
+        if (!activeNote?.content) return { wordCount: 0, charCount: 0, lineCount: 0 };
 
-    // Parse markdown content
-    useEffect(() => {
-        if (activeNote) {
-            const noteFormat = activeNote.format || 'markdown';
-            if (noteFormat === 'text') {
-                const escaped = activeNote.content
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/\n/g, '<br>');
-                setHtmlContent(`<div class="plain-text-content">${escaped}</div>`);
-            } else {
-                marked.setOptions({
-                    gfm: true,
-                    breaks: true,
-                    highlight: function (code, lang) {
-                        if (lang && hljs.getLanguage(lang)) {
-                            try {
-                                return hljs.highlight(code, { language: lang }).value;
-                            } catch (e) { }
-                        }
-                        return hljs.highlightAuto(code).value;
-                    }
-                });
+        const content = activeNote.content;
 
-                const transformedContent = transformAlerts(activeNote.content);
-                const rawHtml = marked.parse(transformedContent);
-                const cleanHtml = DOMPurify.sanitize(rawHtml, {
-                    ADD_ATTR: ['class'],
-                    ADD_TAGS: ['div']
-                });
-                setHtmlContent(cleanHtml);
-            }
-        }
-    }, [activeNote?.content, activeNote?.format]);
+        // Character count (including spaces and newlines)
+        const chars = content.length;
 
-    // Apply highlight.js
-    useEffect(() => {
-        if (previewRef.current) {
-            previewRef.current.querySelectorAll('pre code:not(.hljs)').forEach((block) => {
-                hljs.highlightElement(block);
-            });
-        }
-    }, [htmlContent]);
+        // Line count
+        const lines = content.split('\n').length;
+
+        // Word count - match actual words (alphanumeric sequences)
+        const wordMatches = content.match(/\b[\w']+\b/g);
+        const words = wordMatches ? wordMatches.length : 0;
+
+        return { wordCount: words, charCount: chars, lineCount: lines };
+    }, [activeNote?.content]);
 
     // Handle responsiveness
     useEffect(() => {
@@ -74,7 +39,7 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
         window.addEventListener('resize', handleResize);
         handleResize();
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [viewMode]);
 
     // Reset view mode when switching notes
     useEffect(() => {
@@ -85,6 +50,16 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
             }
         }
     }, [activeNote?.id, activeNote?.format]);
+
+    const handleCopyCode = async (code, id) => {
+        try {
+            await navigator.clipboard.writeText(code);
+            setCopiedCode(id);
+            setTimeout(() => setCopiedCode(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
 
     if (!activeNote) {
         return (
@@ -108,9 +83,299 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
         onEditField('format', noteFormat === 'markdown' ? 'text' : 'markdown');
     };
 
+    // Markdown formatting helper
+    const insertFormatting = useCallback((prefix, suffix = prefix) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = activeNote.content;
+        const selectedText = text.substring(start, end);
+
+        let newText;
+        let newCursorPos;
+
+        if (selectedText) {
+            // Wrap selection
+            newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
+            newCursorPos = end + prefix.length + suffix.length;
+        } else {
+            // Insert placeholder
+            newText = text.substring(0, start) + prefix + suffix + text.substring(end);
+            newCursorPos = start + prefix.length;
+        }
+
+        onEditField('content', newText);
+
+        // Restore cursor position after state update
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+    }, [activeNote?.content, onEditField]);
+
+    // Formatting shortcuts
+    const handleBold = useCallback(() => insertFormatting('**'), [insertFormatting]);
+    const handleItalic = useCallback(() => insertFormatting('*'), [insertFormatting]);
+    const handleLink = useCallback(() => insertFormatting('[', '](url)'), [insertFormatting]);
+    const handleCode = useCallback(() => insertFormatting('`'), [insertFormatting]);
+    const handleList = useCallback(() => insertFormatting('- ', ''), [insertFormatting]);
+
+    // Keyboard shortcuts for formatting
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!activeNote || noteFormat !== 'markdown') return;
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                handleBold();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                e.preventDefault();
+                handleItalic();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                handleLink();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeNote, noteFormat, handleBold, handleItalic, handleLink]);
+
     const showEditor = viewMode === 'edit' || viewMode === 'split' || noteFormat === 'text';
     const showPreview = noteFormat === 'markdown' && (viewMode === 'preview' || viewMode === 'split');
     const isSplit = viewMode === 'split' && noteFormat === 'markdown';
+
+    // Custom components for ReactMarkdown
+    // Language display names mapping
+    const languageNames = {
+        js: 'JavaScript',
+        javascript: 'JavaScript',
+        ts: 'TypeScript',
+        typescript: 'TypeScript',
+        jsx: 'JSX',
+        tsx: 'TSX',
+        py: 'Python',
+        python: 'Python',
+        java: 'Java',
+        cpp: 'C++',
+        'c++': 'C++',
+        c: 'C',
+        cs: 'C#',
+        csharp: 'C#',
+        php: 'PHP',
+        rb: 'Ruby',
+        ruby: 'Ruby',
+        go: 'Go',
+        rust: 'Rust',
+        rs: 'Rust',
+        swift: 'Swift',
+        kotlin: 'Kotlin',
+        kt: 'Kotlin',
+        scala: 'Scala',
+        sql: 'SQL',
+        html: 'HTML',
+        css: 'CSS',
+        scss: 'SCSS',
+        sass: 'Sass',
+        less: 'Less',
+        json: 'JSON',
+        xml: 'XML',
+        yaml: 'YAML',
+        yml: 'YAML',
+        md: 'Markdown',
+        markdown: 'Markdown',
+        bash: 'Bash',
+        shell: 'Shell',
+        sh: 'Shell',
+        zsh: 'Zsh',
+        powershell: 'PowerShell',
+        ps1: 'PowerShell',
+        dockerfile: 'Dockerfile',
+        docker: 'Docker',
+        nginx: 'Nginx',
+        apache: 'Apache',
+        graphql: 'GraphQL',
+        r: 'R',
+        matlab: 'MATLAB',
+        perl: 'Perl',
+        lua: 'Lua',
+        dart: 'Dart',
+        vue: 'Vue',
+        svelte: 'Svelte',
+        elixir: 'Elixir',
+        erlang: 'Erlang',
+        haskell: 'Haskell',
+        clojure: 'Clojure',
+        lisp: 'Lisp',
+        scheme: 'Scheme',
+        text: 'Text',
+        plaintext: 'Plain Text',
+        txt: 'Text',
+    };
+
+    const getLanguageDisplayName = (lang) => {
+        if (!lang) return 'Code';
+        const lower = lang.toLowerCase();
+        return languageNames[lower] || lang.charAt(0).toUpperCase() + lang.slice(1);
+    };
+
+    let codeBlockCounter = 0;
+
+    const markdownComponents = {
+        code({ node, inline, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            const language = match ? match[1] : '';
+            const codeString = String(children).replace(/\n$/, '');
+            codeBlockCounter++;
+            const codeId = `code-block-${codeBlockCounter}`;
+
+            if (!inline && (language || codeString.includes('\n'))) {
+                return (
+                    <div style={{
+                        position: 'relative',
+                        margin: '1em 0',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-subtle)',
+                    }}>
+                        {/* Code block header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '8px 12px',
+                            background: 'var(--code-header)',
+                            borderBottom: '1px solid var(--border-subtle)',
+                        }}>
+                            <span style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: 'var(--text-secondary)',
+                                letterSpacing: '0.3px',
+                            }}>
+                                {getLanguageDisplayName(language)}
+                            </span>
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleCopyCode(codeString, codeId);
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '4px 8px',
+                                    background: copiedCode === codeId ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                    border: `1px solid ${copiedCode === codeId ? 'var(--success)' : 'var(--border-subtle)'}`,
+                                    borderRadius: '4px',
+                                    color: copiedCode === codeId ? 'var(--success)' : 'var(--text-secondary)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem',
+                                    transition: 'all 0.2s',
+                                }}
+                                title="Copy code"
+                            >
+                                {copiedCode === codeId ? (
+                                    <>
+                                        <Check size={12} />
+                                        <span>Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy size={12} />
+                                        <span>Copy</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                        <SyntaxHighlighter
+                            style={theme === 'dark' ? oneDark : oneLight}
+                            language={language || 'text'}
+                            PreTag="div"
+                            customStyle={{
+                                margin: 0,
+                                borderRadius: 0,
+                                fontSize: '0.9em',
+                                padding: '16px',
+                            }}
+                            {...props}
+                        >
+                            {codeString}
+                        </SyntaxHighlighter>
+                    </div>
+                );
+            }
+
+            // Inline code
+            return (
+                <code style={{
+                    background: 'var(--bg-card)',
+                    padding: '0.2em 0.4em',
+                    borderRadius: '4px',
+                    fontSize: '0.9em',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--text-primary)',
+                }} {...props}>
+                    {children}
+                </code>
+            );
+        },
+        // Headings
+        h1: ({ children }) => <h1 style={{ fontSize: '2rem', fontWeight: 700, marginTop: '1.5em', marginBottom: '0.5em', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.3em' }}>{children}</h1>,
+        h2: ({ children }) => <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '1.25em', marginBottom: '0.5em', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.3em' }}>{children}</h2>,
+        h3: ({ children }) => <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '1em', marginBottom: '0.5em', color: 'var(--text-primary)' }}>{children}</h3>,
+        h4: ({ children }) => <h4 style={{ fontSize: '1rem', fontWeight: 600, marginTop: '1em', marginBottom: '0.5em', color: 'var(--text-primary)' }}>{children}</h4>,
+        // Paragraphs
+        p: ({ children }) => <p style={{ marginBottom: '1em', lineHeight: 1.7, color: 'var(--text-primary)' }}>{children}</p>,
+        // Lists
+        ul: ({ children }) => <ul style={{ paddingLeft: '2em', marginBottom: '1em' }}>{children}</ul>,
+        ol: ({ children }) => <ol style={{ paddingLeft: '2em', marginBottom: '1em' }}>{children}</ol>,
+        li: ({ children }) => <li style={{ marginBottom: '0.5em', color: 'var(--text-primary)' }}>{children}</li>,
+        // Links
+        a: ({ href, children }) => <a href={href} style={{ color: 'var(--primary-color)', textDecoration: 'none' }} target="_blank" rel="noopener noreferrer">{children}</a>,
+        // Blockquotes
+        blockquote: ({ children }) => (
+            <blockquote style={{
+                borderLeft: '4px solid var(--primary-color)',
+                paddingLeft: '16px',
+                margin: '1em 0',
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-card)',
+                padding: '12px 16px',
+                borderRadius: '0 8px 8px 0',
+            }}>
+                {children}
+            </blockquote>
+        ),
+        // Strong/Bold
+        strong: ({ children }) => <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{children}</strong>,
+        // Emphasis/Italic
+        em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
+        // Horizontal rule
+        hr: () => <hr style={{ border: 'none', height: '1px', background: 'var(--border-subtle)', margin: '2em 0' }} />,
+        // Tables
+        table: ({ children }) => <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1em' }}>{children}</table>,
+        th: ({ children }) => <th style={{ border: '1px solid var(--border-subtle)', padding: '8px 12px', background: 'var(--bg-card)', fontWeight: 600, textAlign: 'left', color: 'var(--text-primary)' }}>{children}</th>,
+        td: ({ children }) => <td style={{ border: '1px solid var(--border-subtle)', padding: '8px 12px', color: 'var(--text-primary)' }}>{children}</td>,
+        // Strikethrough
+        del: ({ children }) => <del style={{ textDecoration: 'line-through', color: 'var(--text-muted)' }}>{children}</del>,
+        // Task lists
+        input: ({ checked, ...props }) => (
+            <input
+                type="checkbox"
+                checked={checked}
+                readOnly
+                style={{ marginRight: '8px' }}
+                {...props}
+            />
+        ),
+        // Images
+        img: ({ src, alt }) => <img src={src} alt={alt} style={{ maxWidth: '100%', borderRadius: '8px', margin: '1em 0' }} />,
+    };
 
     return (
         <div className="main-content">
@@ -182,6 +447,33 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                 </div>
             </div>
 
+            {/* Formatting Toolbar - Only for Markdown */}
+            {noteFormat === 'markdown' && showEditor && (
+                <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    padding: '8px 20px',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    background: 'var(--glass-bg)',
+                }}>
+                    <button className="icon-btn" onClick={handleBold} title="Bold (Ctrl+B)">
+                        <Bold size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={handleItalic} title="Italic (Ctrl+I)">
+                        <Italic size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={handleLink} title="Link (Ctrl+K)">
+                        <Link size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={handleCode} title="Inline Code">
+                        <Code size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={handleList} title="Bullet List">
+                        <List size={16} />
+                    </button>
+                </div>
+            )}
+
             <div style={{
                 flex: 1,
                 display: 'flex',
@@ -193,14 +485,17 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                         width: isSplit ? '50%' : '100%',
                         height: '100%',
                         borderRight: isSplit ? '2px solid #3b82f6' : 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
                     }}>
                         <textarea
+                            ref={textareaRef}
                             value={activeNote.content}
                             onChange={(e) => onEditField('content', e.target.value)}
                             placeholder={noteFormat === 'markdown' ? 'Type your markdown here...' : 'Type your text here...'}
                             style={{
                                 width: '100%',
-                                height: '100%',
+                                flex: 1,
                                 background: 'transparent',
                                 border: 'none',
                                 resize: 'none',
@@ -219,7 +514,6 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                 {/* Preview */}
                 {showPreview && (
                     <div
-                        ref={previewRef}
                         style={{
                             flex: 1,
                             height: '100%',
@@ -227,12 +521,53 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                             padding: '24px 32px',
                         }}
                     >
-                        <div
-                            className="markdown-body"
-                            dangerouslySetInnerHTML={{ __html: htmlContent }}
-                        />
+                        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={markdownComponents}
+                            >
+                                {activeNote.content}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                 )}
+            </div>
+
+            {/* Status Bar */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 20px',
+                borderTop: '1px solid var(--border-subtle)',
+                background: 'var(--bg-sidebar)',
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+            }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                    <span>{wordCount} words</span>
+                    <span>{charCount} chars</span>
+                    <span>{lineCount} lines</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {saveStatus === 'saving' && (
+                        <>
+                            <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                            <span>Saving...</span>
+                        </>
+                    )}
+                    {saveStatus === 'saved' && (
+                        <>
+                            <Save size={12} style={{ color: 'var(--success)' }} />
+                            <span style={{ color: 'var(--success)' }}>Saved</span>
+                        </>
+                    )}
+                    {saveStatus === 'unsaved' && (
+                        <>
+                            <span style={{ color: 'var(--text-secondary)' }}>Unsaved changes</span>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

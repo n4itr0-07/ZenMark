@@ -5,34 +5,64 @@
   --bg-editor: #0f1115;
   --bg-card: rgba(30, 32, 40, 0.6);
   --bg-card-hover: rgba(40, 44, 55, 0.8);
-  
+
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-active: rgba(66, 153, 225, 0.4);
-  
+
   --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  
+
   --primary-color: #3b82f6;
   --primary-hover: #2563eb;
   --accent-color: #8b5cf6;
-  
+
   --danger: #ef4444;
   --success: #10b981;
-  
+  --warning: #f59e0b;
+
   /* Glassmorphism */
   --glass-bg: rgba(22, 27, 34, 0.7);
   --glass-border: 1px solid rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   --backdrop-blur: blur(10px);
-  
+
+  /* Code block */
+  --code-bg: #1e1e1e;
+  --code-header: #252526;
+
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
-  
+
   /* Spacing */
   --header-height: 60px;
   --sidebar-width: 280px;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --bg-app: #ffffff;
+  --bg-sidebar: #f8fafc;
+  --bg-editor: #ffffff;
+  --bg-card: rgba(241, 245, 249, 0.8);
+  --bg-card-hover: rgba(226, 232, 240, 0.9);
+
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-active: rgba(59, 130, 246, 0.4);
+
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* Glassmorphism - Light */
+  --glass-bg: rgba(248, 250, 252, 0.9);
+  --glass-border: 1px solid rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+
+  /* Code block - Light */
+  --code-bg: #f6f8fa;
+  --code-header: #eaecef;
 }
 
 * {
@@ -47,7 +77,8 @@ body {
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* App-like feel */
+  overflow: hidden;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 #root {
@@ -62,15 +93,18 @@ body {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(128, 128, 128, 0.3);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(128, 128, 128, 0.5);
 }
 
 .icon-btn {
@@ -85,10 +119,12 @@ body {
   align-items: center;
   justify-content: center;
 }
+
 .icon-btn:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-card);
   color: var(--text-primary);
 }
+
 .icon-btn.active {
   background: rgba(59, 130, 246, 0.15);
   color: var(--primary-color);
@@ -104,6 +140,18 @@ body {
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .btn-primary:hover {
   background: var(--primary-hover);
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

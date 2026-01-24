@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Search, FileText, Github, Info } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download } from 'lucide-react';
 
-const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote, onShowAbout }) => {
+const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote, onTogglePin, onShowAbout, theme, onToggleTheme, onImportFile, onExportAll }) => {
     const [search, setSearch] = useState('');
+    const fileInputRef = useRef(null);
 
-    const filteredNotes = notes.filter(note =>
-        note.title.toLowerCase().includes(search.toLowerCase()) ||
-        note.content.toLowerCase().includes(search.toLowerCase())
-    ).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+    // Filter and sort notes - pinned first, then by date
+    const filteredNotes = notes
+        .filter(note =>
+            note.title.toLowerCase().includes(search.toLowerCase()) ||
+            note.content.toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => {
+            // Pinned notes first
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            // Then by date
+            return new Date(b.updatedAt) - new Date(a.updatedAt);
+        });
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+
+        return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
     };
 
     return (
@@ -19,9 +42,18 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
             {/* Header */}
             <div className="sidebar-header">
                 <h1 className="sidebar-heading">ZenMark</h1>
-                <button className="icon-btn active" onClick={onCreateNote} title="New Note">
-                    <Plus size={20} />
-                </button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                        className="icon-btn"
+                        onClick={onToggleTheme}
+                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                    <button className="icon-btn active" onClick={onCreateNote} title="New Note (Alt+N)">
+                        <Plus size={20} />
+                    </button>
+                </div>
             </div>
 
             {/* Search */}
@@ -29,7 +61,7 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    background: 'rgba(0,0,0,0.2)',
+                    background: 'var(--bg-card)',
                     borderRadius: '6px',
                     padding: '6px 10px',
                     border: '1px solid var(--border-subtle)'
@@ -67,21 +99,49 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                         className={`file-item ${note.id === activeNoteId ? 'active' : ''}`}
                         onClick={() => onSelectNote(note.id)}
                     >
-                        <FileText size={16} />
+                        <div style={{ position: 'relative' }}>
+                            <FileText size={16} />
+                            {note.pinned && (
+                                <Pin
+                                    size={8}
+                                    style={{
+                                        position: 'absolute',
+                                        top: -4,
+                                        right: -4,
+                                        color: 'var(--warning)',
+                                        fill: 'var(--warning)'
+                                    }}
+                                />
+                            )}
+                        </div>
                         <div style={{ flex: 1, marginLeft: '10px', overflow: 'hidden' }}>
                             <div className="file-name">{note.title || 'Untitled Note'}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                                 {formatDate(note.updatedAt)}
                             </div>
                         </div>
-                        <button
-                            className="icon-btn"
-                            style={{ padding: '4px', opacity: 0.6 }}
-                            onClick={(e) => { e.stopPropagation(); onDeleteNote(note.id); }}
-                            title="Delete Note"
-                        >
-                            <Trash2 size={14} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                            <button
+                                className="icon-btn"
+                                style={{
+                                    padding: '4px',
+                                    opacity: note.pinned ? 1 : 0.5,
+                                    color: note.pinned ? 'var(--warning)' : 'var(--text-muted)'
+                                }}
+                                onClick={(e) => { e.stopPropagation(); onTogglePin(note.id); }}
+                                title={note.pinned ? 'Unpin Note' : 'Pin Note'}
+                            >
+                                <Pin size={12} style={note.pinned ? { fill: 'var(--warning)' } : {}} />
+                            </button>
+                            <button
+                                className="icon-btn"
+                                style={{ padding: '4px', opacity: 0.6 }}
+                                onClick={(e) => { e.stopPropagation(); onDeleteNote(note.id); }}
+                                title="Delete Note"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -95,6 +155,28 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                 justifyContent: 'center',
                 flexShrink: 0,
             }}>
+                {/* Hidden file input for import */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".md,.txt"
+                    onChange={onImportFile}
+                    style={{ display: 'none' }}
+                />
+                <button
+                    className="icon-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Import .md or .txt file"
+                >
+                    <Upload size={18} />
+                </button>
+                <button
+                    className="icon-btn"
+                    onClick={onExportAll}
+                    title="Export all notes (backup)"
+                >
+                    <Download size={18} />
+                </button>
                 <a
                     href="https://github.com/n4itr0-07/ZenMark"
                     target="_blank"
