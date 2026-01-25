@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download, ChevronDown, FileEdit, CheckSquare, BookOpen, FolderOpen, Code } from 'lucide-react';
+import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download, ChevronDown, FileEdit, CheckSquare, BookOpen, FolderOpen, Code, X } from 'lucide-react';
 
-const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote, onTogglePin, onShowAbout, theme, onToggleTheme, onImportFile, onExportAll }) => {
+const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote, onTogglePin, onShowAbout, theme, onToggleTheme, onImportFile, onExportAll, onCloseSidebar, isMobile }) => {
     const [search, setSearch] = useState('');
     const [showTemplates, setShowTemplates] = useState(false);
     const fileInputRef = useRef(null);
@@ -52,11 +52,11 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
     };
 
     return (
-        <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <aside style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--bg-sidebar)' }}>
             {/* Header */}
-            <div className="sidebar-header">
-                <h1 className="sidebar-heading">ZenMark</h1>
-                <div style={{ display: 'flex', gap: '4px' }}>
+            <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                <div className="sidebar-heading" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>ZenMark</div>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <button
                         className="icon-btn"
                         onClick={onToggleTheme}

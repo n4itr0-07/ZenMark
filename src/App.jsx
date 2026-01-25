@@ -3,19 +3,20 @@ import { Menu, X } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Editor from './components/Editor';
 import AboutPage from './components/AboutPage';
+import WelcomeScreen from './components/WelcomeScreen';
 import { initDB, getAllNotes, createNewNote, saveNote, deleteNote } from './lib/storage';
 import Modal from './components/Modal';
 
 function App() {
   const [notes, setNotes] = useState([]);
   const [activeNoteId, setActiveNoteId] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile sidebar
+  const [sidebarVisible, setSidebarVisible] = useState(true); // Desktop sidebar toggle
   const [loading, setLoading] = useState(true);
   const [showAbout, setShowAbout] = useState(false);
-  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'unsaved'
+  const [saveStatus, setSaveStatus] = useState('saved');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [theme, setTheme] = useState(() => {
-    // Load theme from localStorage or default to 'dark'
     return localStorage.getItem('zenmark-theme') || 'dark';
   });
   const saveTimeoutRef = useRef(null);
@@ -24,6 +25,20 @@ function App() {
   // Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+
+  // Handle window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Auto-close mobile sidebar when switching to desktop
+      if (!mobile) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Apply theme to document
   useEffect(() => {
@@ -278,62 +293,73 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
+      {/* Mobile Overlay - only visible when sidebar is open on mobile */}
+      {isMobile && sidebarOpen && (
         <div
-          style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 19 }}
+          className="mobile-overlay visible"
           onClick={() => setSidebarOpen(false)}
-        ></div>
+        />
       )}
 
-      {/* Mobile Header (Hamburger) */}
-      <div className="d-md-none" style={{
-        position: 'absolute',
-        top: 10,
-        left: 10,
-        zIndex: 30,
-        display: window.innerWidth < 768 ? 'block' : 'none'
-      }}>
-        <button className="icon-btn" style={{ background: 'var(--bg-card)' }} onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <X /> : <Menu />}
-        </button>
-      </div>
-
-      {sidebarVisible && (
-        <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      {/* Sidebar */}
+      {/* On mobile: always in DOM for animation, controlled by CSS .open class */}
+      {/* On desktop: conditionally rendered based on sidebarVisible */}
+      {(isMobile || sidebarVisible) && (
+        <div
+          className={`sidebar ${isMobile ? 'mobile' : 'desktop'} ${isMobile && sidebarOpen ? 'open' : ''}`}
+        >
           <Sidebar
             notes={notes}
             activeNoteId={activeNoteId}
-            onSelectNote={(id) => { setActiveNoteId(id); setSidebarOpen(false); setShowAbout(false); }}
+            onSelectNote={(id) => {
+              setActiveNoteId(id);
+              if (isMobile) setSidebarOpen(false);
+              setShowAbout(false);
+            }}
             onCreateNote={handleCreateNote}
             onDeleteNote={handleDeleteNote}
             onTogglePin={handleTogglePin}
-            onShowAbout={() => setShowAbout(true)}
+            onShowAbout={() => { setShowAbout(true); if (isMobile) setSidebarOpen(false); }}
             theme={theme}
             onToggleTheme={toggleTheme}
             onImportFile={handleImportFile}
             onExportAll={handleExportAll}
+            onCloseSidebar={() => setSidebarOpen(false)}
+            isMobile={isMobile}
           />
         </div>
       )}
 
-      {/* Show About Page or Editor */}
+      {/* Show About Page, Welcome Screen, or Editor */}
       {showAbout ? (
         <AboutPage onBack={() => setShowAbout(false)} />
+      ) : !activeNote ? (
+        <WelcomeScreen
+          onCreateNote={handleCreateNote}
+          isMobile={isMobile}
+          onOpenSidebar={() => setSidebarOpen(true)}
+        />
       ) : (
         <Editor
           ref={editorRef}
           activeNote={activeNote}
           onUpdateNote={handleUpdateNote}
           onDownload={handleDownload}
-          onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
-          sidebarVisible={sidebarVisible}
+          onToggleSidebar={() => {
+            if (isMobile) {
+              setSidebarOpen(!sidebarOpen);
+            } else {
+              setSidebarVisible(!sidebarVisible);
+            }
+          }}
+          sidebarVisible={isMobile ? true : sidebarVisible}
           saveStatus={saveStatus}
           theme={theme}
           focusMode={focusMode}
           onToggleFocusMode={toggleFocusMode}
           onDuplicate={handleDuplicateNote}
           onPrint={handlePrint}
+          isMobile={isMobile}
         />
       )}
 

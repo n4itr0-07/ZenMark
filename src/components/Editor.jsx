@@ -3,9 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2 } from 'lucide-react';
+import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2, Menu } from 'lucide-react';
 
-const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint }) => {
+const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint, isMobile = false }) => {
     const [viewMode, setViewMode] = useState('split');
     const [copiedCode, setCopiedCode] = useState(null);
     const textareaRef = useRef(null);
@@ -421,24 +421,25 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
 
     return (
         <div className="main-content">
-            <div className="toolbar">
+            <div className="toolbar" style={{ overflowX: 'auto' }}>
                 <button
                     className="icon-btn"
                     onClick={onToggleSidebar}
-                    title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
-                    style={{ marginRight: '12px' }}
+                    title={isMobile ? 'Open Menu' : (sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar')}
+                    style={{ marginRight: '8px', flexShrink: 0 }}
                 >
-                    {sidebarVisible ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+                    {isMobile ? <Menu size={20} /> : (sidebarVisible ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />)}
                 </button>
 
                 <input
-                    className="file-title-input"
+                    className="file-title-input note-title-input"
                     value={activeNote.title}
                     onChange={(e) => onEditField('title', e.target.value)}
                     placeholder="Note Title"
+                    style={{ minWidth: isMobile ? '100px' : '150px', flex: isMobile ? '1' : 'unset' }}
                 />
 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
                     <button
                         className={`icon-btn ${noteFormat === 'markdown' ? 'active' : ''}`}
                         onClick={toggleFormat}
@@ -477,7 +478,7 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                         </>
                     )}
 
-                    <div style={{ width: '1px', background: 'var(--border-subtle)', margin: '0 8px' }}></div>
+                    {!isMobile && <div style={{ width: '1px', background: 'var(--border-subtle)', margin: '0 4px' }}></div>}
 
                     <button
                         className="icon-btn"
@@ -486,39 +487,45 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                     >
                         <Download size={18} />
                     </button>
-                    <button
-                        className="icon-btn"
-                        onClick={() => onDuplicate && onDuplicate(activeNote)}
-                        title="Duplicate Note"
-                    >
-                        <Copy size={18} />
-                    </button>
-                    <button
-                        className="icon-btn"
-                        onClick={onPrint}
-                        title="Print Note"
-                    >
-                        <Printer size={18} />
-                    </button>
-                    <button
-                        className={`icon-btn ${focusMode ? 'active' : ''}`}
-                        onClick={onToggleFocusMode}
-                        title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}
-                    >
-                        {focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                    </button>
+                    {!isMobile && (
+                        <>
+                            <button
+                                className="icon-btn"
+                                onClick={() => onDuplicate && onDuplicate(activeNote)}
+                                title="Duplicate Note"
+                            >
+                                <Copy size={18} />
+                            </button>
+                            <button
+                                className="icon-btn"
+                                onClick={onPrint}
+                                title="Print Note"
+                            >
+                                <Printer size={18} />
+                            </button>
+                            <button
+                                className={`icon-btn ${focusMode ? 'active' : ''}`}
+                                onClick={onToggleFocusMode}
+                                title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}
+                            >
+                                {focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
             {/* Formatting Toolbar - Only for Markdown */}
             {noteFormat === 'markdown' && showEditor && (
-                <div style={{
+                <div className="formatting-toolbar" style={{
                     display: 'flex',
                     gap: '4px',
-                    padding: '8px 20px',
+                    padding: '8px 16px',
                     borderBottom: '1px solid var(--border-subtle)',
                     background: 'var(--glass-bg)',
-                    flexWrap: 'wrap',
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch',
+                    flexShrink: 0,
                 }}>
                     <button className="icon-btn" onClick={handleBold} title="Bold (Ctrl+B)">
                         <Bold size={16} />
