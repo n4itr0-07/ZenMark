@@ -15,8 +15,8 @@ export default defineConfig({
         theme_color: '#0f1115',
         background_color: '#0f1115',
         display: 'standalone',
-        start_url: '/ZenMark/',
-        scope: '/ZenMark/',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'icon-192.png',
@@ -57,5 +57,5 @@ export default defineConfig({
       }
     })
   ],
-  base: '/ZenMark/',
+  base: '/',
 })

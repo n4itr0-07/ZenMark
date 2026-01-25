@@ -97,7 +97,7 @@ flowchart TD
 
 ## 🖥️ Demo
 
-**Live Demo:** [https://n4itr0-07.github.io/ZenMark](https://n4itr0-07.github.io/ZenMark)
+**Live Demo:** [https://zenmark.site](https://zenmark.site)
 
 ## ⌨️ Keyboard Shortcuts
 
