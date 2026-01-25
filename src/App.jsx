@@ -55,9 +55,9 @@ function App() {
     loadNotes();
   }, []);
 
-  const handleCreateNote = useCallback(async () => {
+  const handleCreateNote = useCallback(async (template = 'blank') => {
     try {
-      const newNote = await createNewNote();
+      const newNote = await createNewNote('markdown', template);
       setNotes(prev => [newNote, ...prev]);
       setActiveNoteId(newNote.id);
       setShowAbout(false);
@@ -238,6 +238,38 @@ function App() {
     URL.revokeObjectURL(url);
   }, [notes]);
 
+  // Duplicate note
+  const handleDuplicateNote = useCallback(async (note) => {
+    try {
+      const duplicatedNote = await createNewNote('markdown', 'blank');
+      const newNote = {
+        ...duplicatedNote,
+        title: `${note.title} (Copy)`,
+        content: note.content,
+        pinned: false,
+      };
+      await saveNote(newNote);
+      setNotes(prev => [newNote, ...prev]);
+      setActiveNoteId(newNote.id);
+    } catch (err) {
+      console.error('Failed to duplicate note:', err);
+    }
+  }, []);
+
+  // Print note
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
+
+  // Focus mode state
+  const [focusMode, setFocusMode] = useState(false);
+  const toggleFocusMode = useCallback(() => {
+    setFocusMode(prev => !prev);
+    if (!focusMode) {
+      setSidebarVisible(false);
+    }
+  }, [focusMode]);
+
   const activeNote = notes.find(n => n.id === activeNoteId);
 
   if (loading) {
@@ -298,6 +330,10 @@ function App() {
           sidebarVisible={sidebarVisible}
           saveStatus={saveStatus}
           theme={theme}
+          focusMode={focusMode}
+          onToggleFocusMode={toggleFocusMode}
+          onDuplicate={handleDuplicateNote}
+          onPrint={handlePrint}
         />
       )}
 

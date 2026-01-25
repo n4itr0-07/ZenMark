@@ -1,10 +1,19 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download } from 'lucide-react';
+import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download, ChevronDown, FileEdit, CheckSquare, BookOpen, FolderOpen, Code } from 'lucide-react';
 
 const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote, onTogglePin, onShowAbout, theme, onToggleTheme, onImportFile, onExportAll }) => {
     const [search, setSearch] = useState('');
+    const [showTemplates, setShowTemplates] = useState(false);
     const fileInputRef = useRef(null);
 
+    const templates = [
+        { id: 'blank', name: 'Blank Note', icon: FileText },
+        { id: 'meeting', name: 'Meeting Notes', icon: FileEdit },
+        { id: 'todo', name: 'To-Do List', icon: CheckSquare },
+        { id: 'journal', name: 'Daily Journal', icon: BookOpen },
+        { id: 'project', name: 'Project Doc', icon: FolderOpen },
+        { id: 'code', name: 'Code Snippet', icon: Code },
+    ];
 
     // Filter and sort notes - pinned first, then by date
     const filteredNotes = notes
@@ -37,6 +46,11 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
         return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
     };
 
+    const handleCreateFromTemplate = (templateId) => {
+        onCreateNote(templateId);
+        setShowTemplates(false);
+    };
+
     return (
         <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Header */}
@@ -50,9 +64,63 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                     >
                         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                     </button>
-                    <button className="icon-btn active" onClick={onCreateNote} title="New Note (Alt+N)">
-                        <Plus size={20} />
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="icon-btn active"
+                            onClick={() => setShowTemplates(!showTemplates)}
+                            title="New Note (Alt+N)"
+                            style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
+                        >
+                            <Plus size={20} />
+                            <ChevronDown size={12} />
+                        </button>
+                        {showTemplates && (
+                            <>
+                                <div
+                                    style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                                    onClick={() => setShowTemplates(false)}
+                                />
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '4px',
+                                    background: 'var(--bg-card)',
+                                    border: '1px solid var(--border-subtle)',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                    zIndex: 99,
+                                    minWidth: '160px',
+                                    overflow: 'hidden',
+                                }}>
+                                    {templates.map((t) => (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => handleCreateFromTemplate(t.id)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '10px',
+                                                width: '100%',
+                                                padding: '10px 14px',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                                textAlign: 'left',
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = 'var(--bg-sidebar)'}
+                                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                        >
+                                            <t.icon size={16} color="var(--text-secondary)" />
+                                            {t.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 

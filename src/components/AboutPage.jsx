@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Github, Heart, ExternalLink, FileText, Eye, Pin, Sun, Upload, Download, Keyboard, Palette } from 'lucide-react';
+import { ArrowLeft, Github, Heart, ExternalLink, FileText, Eye, Pin, Sun, Upload, Download, Keyboard, Palette, Copy, Printer, Maximize2, Clock, Strikethrough, Heading2, Quote, Code2, Bold, Italic, Link, Code, List } from 'lucide-react';
 
 const AboutPage = ({ onBack }) => {
     return (
@@ -33,7 +33,7 @@ const AboutPage = ({ onBack }) => {
             <div style={{
                 flex: 1,
                 padding: '40px',
-                maxWidth: '800px',
+                maxWidth: '900px',
                 margin: '0 auto',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.8,
@@ -51,8 +51,11 @@ const AboutPage = ({ onBack }) => {
                     }}>
                         ZenMark
                     </h2>
-                    <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
+                    <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                         A modern, offline-capable markdown note-taking app
+                    </p>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+                        No servers • No sign-ups • 100% Private • Works Offline
                     </p>
                 </div>
 
@@ -62,58 +65,65 @@ const AboutPage = ({ onBack }) => {
                         What is ZenMark?
                     </h3>
                     <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
-                        ZenMark is a privacy-focused note-taking application designed for developers, writers, and anyone who loves Markdown.
-                        All your notes are stored locally in your browser — <strong style={{ color: 'var(--text-primary)' }}>no accounts, no servers, no data collection</strong>.
+                        ZenMark is a <strong style={{ color: 'var(--text-primary)' }}>privacy-focused</strong> note-taking application designed for developers, writers, and anyone who loves Markdown.
+                        All your notes are stored locally in your browser's IndexedDB — <strong style={{ color: 'var(--primary-color)' }}>no accounts, no servers, no data collection</strong>.
                     </p>
                     <p style={{ color: 'var(--text-secondary)' }}>
-                        Built as a Progressive Web App (PWA), ZenMark works offline and can be installed on your device just like a native app.
+                        Built as a Progressive Web App (PWA), ZenMark works completely offline and can be installed on your device like a native app.
                     </p>
                 </section>
 
-                {/* Features Section */}
+                {/* All Features Section */}
                 <section style={{ marginBottom: '40px' }}>
                     <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
-                        Features
+                        All Features
                     </h3>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: '16px',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                        gap: '12px',
                     }}>
                         {[
-                            { icon: FileText, title: 'Full Markdown Support', desc: 'Headers, lists, code blocks, tables, and more' },
-                            { icon: Eye, title: 'Live Preview', desc: 'Split view to see formatted content as you type' },
-                            { icon: Palette, title: 'Syntax Highlighting', desc: 'Beautiful code highlighting for 60+ languages' },
-                            { icon: Pin, title: 'Pin Notes', desc: 'Keep important notes at the top of your list' },
-                            { icon: Sun, title: 'Light & Dark Themes', desc: 'Switch themes to match your preference' },
-                            { icon: Upload, title: 'Import Files', desc: 'Import .md and .txt files directly' },
-                            { icon: Download, title: 'Export & Backup', desc: 'Download notes or backup everything as JSON' },
-                            { icon: Keyboard, title: 'Keyboard Shortcuts', desc: 'Quick actions for power users' },
+                            { icon: FileText, title: 'Full Markdown', desc: 'Headers, lists, tables, code blocks, blockquotes' },
+                            { icon: Eye, title: 'Live Preview', desc: 'Split view, edit-only, or preview-only modes' },
+                            { icon: Palette, title: 'Syntax Highlighting', desc: '60+ languages with one-click copy' },
+                            { icon: Pin, title: 'Pin Notes', desc: 'Keep important notes at the top' },
+                            { icon: Sun, title: 'Light & Dark Themes', desc: 'Toggle with Alt+T, saves preference' },
+                            { icon: FileText, title: '6 Note Templates', desc: 'Meeting, To-Do, Journal, Project, Code' },
+                            { icon: Clock, title: 'Reading Time', desc: 'Estimated time based on word count' },
+                            { icon: Copy, title: 'Duplicate Notes', desc: 'Create copies with one click' },
+                            { icon: Maximize2, title: 'Focus Mode', desc: 'Distraction-free writing experience' },
+                            { icon: Printer, title: 'Print Notes', desc: 'Print formatted markdown cleanly' },
+                            { icon: Upload, title: 'Import Files', desc: 'Import .md and .txt files' },
+                            { icon: Download, title: 'Export & Backup', desc: 'Download as .md or backup all as JSON' },
                         ].map((feature, i) => (
                             <div key={i} style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '12px',
+                                padding: '12px',
                                 background: 'var(--bg-card)',
-                                padding: '16px',
                                 borderRadius: '8px',
                                 border: '1px solid var(--border-subtle)',
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                    <feature.icon size={18} color="var(--primary-color)" />
-                                    <h4 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1rem' }}>
+                                <feature.icon size={20} color="var(--primary-color)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                <div>
+                                    <h4 style={{ color: 'var(--text-primary)', margin: '0 0 4px', fontSize: '0.95rem' }}>
                                         {feature.title}
                                     </h4>
+                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        {feature.desc}
+                                    </p>
                                 </div>
-                                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                    {feature.desc}
-                                </p>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* How to Use Section */}
+                {/* Complete User Guide */}
                 <section style={{ marginBottom: '40px' }}>
                     <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
-                        How to Use
+                        Complete User Guide
                     </h3>
                     <div style={{
                         background: 'var(--bg-card)',
@@ -122,22 +132,27 @@ const AboutPage = ({ onBack }) => {
                         overflow: 'hidden',
                     }}>
                         {[
-                            { step: '1', title: 'Create a Note', desc: 'Click the + button in the sidebar or press Alt+N' },
-                            { step: '2', title: 'Write in Markdown', desc: 'Use the editor to write. Bold with **text**, italic with *text*, code with `code`' },
-                            { step: '3', title: 'Preview Your Work', desc: 'Click the eye icon to preview, or use split view for side-by-side editing' },
-                            { step: '4', title: 'Pin Important Notes', desc: 'Click the pin icon on any note to keep it at the top' },
-                            { step: '5', title: 'Export Your Notes', desc: 'Download individual notes as .md or backup all notes using the download icon' },
+                            { step: '1', title: 'Create a Note', desc: 'Click the + dropdown → Select a template or "Blank Note". Shortcut: Alt+N' },
+                            { step: '2', title: 'Write in Markdown', desc: 'Use **bold**, *italic*, `code`, # headers, - lists, > quotes, and more' },
+                            { step: '3', title: 'Use the Toolbar', desc: 'Quick buttons for Bold, Italic, Strikethrough, Heading, Quote, List, Link, Code' },
+                            { step: '4', title: 'Preview Your Work', desc: 'Toggle between Edit, Split, and Preview modes using the view buttons' },
+                            { step: '5', title: 'Pin Important Notes', desc: 'Click the pin icon on any note to keep it at the top of your list' },
+                            { step: '6', title: 'Search Notes', desc: 'Use the search bar in the sidebar to find notes by title or content' },
+                            { step: '7', title: 'Switch Themes', desc: 'Click the sun/moon icon or press Alt+T to toggle light/dark mode' },
+                            { step: '8', title: 'Focus Mode', desc: 'Click the maximize icon to hide the sidebar and focus on writing' },
+                            { step: '9', title: 'Export & Backup', desc: 'Download individual notes as .md or backup all notes as JSON' },
+                            { step: '10', title: 'Install as App', desc: 'On Chrome/Edge, click the install icon in the address bar' },
                         ].map((item, i) => (
                             <div key={i} style={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
                                 gap: '16px',
-                                padding: '16px',
-                                borderBottom: i < 4 ? '1px solid var(--border-subtle)' : 'none',
+                                padding: '14px 16px',
+                                borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none',
                             }}>
                                 <div style={{
-                                    width: '28px',
-                                    height: '28px',
+                                    width: '26px',
+                                    height: '26px',
                                     borderRadius: '50%',
                                     background: 'var(--primary-color)',
                                     color: 'white',
@@ -145,16 +160,16 @@ const AboutPage = ({ onBack }) => {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     fontWeight: 600,
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     flexShrink: 0,
                                 }}>
                                     {item.step}
                                 </div>
                                 <div>
-                                    <h4 style={{ color: 'var(--text-primary)', margin: '0 0 4px', fontSize: '1rem' }}>
+                                    <h4 style={{ color: 'var(--text-primary)', margin: '0 0 4px', fontSize: '0.95rem' }}>
                                         {item.title}
                                     </h4>
-                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                         {item.desc}
                                     </p>
                                 </div>
@@ -163,35 +178,45 @@ const AboutPage = ({ onBack }) => {
                     </div>
                 </section>
 
-                {/* Keyboard Shortcuts Section */}
+                {/* Keyboard Shortcuts - Complete */}
                 <section style={{ marginBottom: '40px' }}>
                     <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.3rem' }}>
                         Keyboard Shortcuts
                     </h3>
                     <div style={{
-                        background: 'var(--bg-card)',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-subtle)',
-                        overflow: 'hidden',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '8px',
                     }}>
                         {[
                             { keys: 'Ctrl + S', action: 'Save note' },
-                            { keys: 'Alt + N', action: 'Create new note' },
-                            { keys: 'Alt + T', action: 'Toggle light/dark theme' },
+                            { keys: 'Alt + N', action: 'New note' },
+                            { keys: 'Alt + T', action: 'Toggle theme' },
+                            { keys: 'Ctrl + B', action: 'Bold text' },
+                            { keys: 'Ctrl + I', action: 'Italic text' },
+                            { keys: 'Ctrl + K', action: 'Insert link' },
+                            { keys: 'Ctrl + `', action: 'Inline code' },
+                            { keys: 'Ctrl + Shift + C', action: 'Code block' },
+                            { keys: 'Ctrl + Shift + S', action: 'Strikethrough' },
+                            { keys: 'Ctrl + H', action: 'Heading' },
+                            { keys: 'Ctrl + Shift + Q', action: 'Blockquote' },
+                            { keys: 'Ctrl + Shift + L', action: 'List item' },
                         ].map((shortcut, i) => (
                             <div key={i} style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                padding: '12px 16px',
-                                borderBottom: i < 2 ? '1px solid var(--border-subtle)' : 'none',
+                                padding: '10px 14px',
+                                background: 'var(--bg-card)',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border-subtle)',
                             }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>{shortcut.action}</span>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{shortcut.action}</span>
                                 <kbd style={{
                                     background: 'var(--bg-sidebar)',
-                                    padding: '4px 10px',
+                                    padding: '4px 8px',
                                     borderRadius: '4px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.75rem',
                                     fontFamily: 'var(--font-mono)',
                                     color: 'var(--text-primary)',
                                     border: '1px solid var(--border-subtle)',

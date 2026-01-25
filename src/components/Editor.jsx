@@ -3,16 +3,16 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List } from 'lucide-react';
+import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2 } from 'lucide-react';
 
-const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark' }) => {
+const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint }) => {
     const [viewMode, setViewMode] = useState('split');
     const [copiedCode, setCopiedCode] = useState(null);
     const textareaRef = useRef(null);
 
-    // Calculate word, character, and line count
-    const { wordCount, charCount, lineCount } = useMemo(() => {
-        if (!activeNote?.content) return { wordCount: 0, charCount: 0, lineCount: 0 };
+    // Calculate word, character, line count, and reading time
+    const { wordCount, charCount, lineCount, readingTime } = useMemo(() => {
+        if (!activeNote?.content) return { wordCount: 0, charCount: 0, lineCount: 0, readingTime: '0 min' };
 
         const content = activeNote.content;
 
@@ -26,7 +26,11 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
         const wordMatches = content.match(/\b[\w']+\b/g);
         const words = wordMatches ? wordMatches.length : 0;
 
-        return { wordCount: words, charCount: chars, lineCount: lines };
+        // Reading time (average 200 words per minute)
+        const minutes = Math.ceil(words / 200);
+        const readTime = minutes < 1 ? '< 1 min' : `${minutes} min read`;
+
+        return { wordCount: words, charCount: chars, lineCount: lines, readingTime: readTime };
     }, [activeNote?.content]);
 
     // Handle responsiveness
@@ -121,29 +125,67 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
     const handleLink = useCallback(() => insertFormatting('[', '](url)'), [insertFormatting]);
     const handleCode = useCallback(() => insertFormatting('`'), [insertFormatting]);
     const handleList = useCallback(() => insertFormatting('- ', ''), [insertFormatting]);
+    const handleCodeBlock = useCallback(() => insertFormatting('```\n', '\n```'), [insertFormatting]);
+    const handleStrikethrough = useCallback(() => insertFormatting('~~'), [insertFormatting]);
+    const handleHeading = useCallback(() => insertFormatting('## ', ''), [insertFormatting]);
+    const handleQuote = useCallback(() => insertFormatting('> ', ''), [insertFormatting]);
+    const handleHorizontalRule = useCallback(() => insertFormatting('\n---\n', ''), [insertFormatting]);
 
     // Keyboard shortcuts for formatting
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (!activeNote || noteFormat !== 'markdown') return;
 
+            // Ctrl/Cmd + B = Bold
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault();
                 handleBold();
             }
+            // Ctrl/Cmd + I = Italic
             if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
                 e.preventDefault();
                 handleItalic();
             }
+            // Ctrl/Cmd + K = Link
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 handleLink();
+            }
+            // Ctrl/Cmd + Shift + C = Code Block (triple ticks)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                handleCodeBlock();
+            }
+            // Ctrl/Cmd + ` = Inline Code
+            if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+                e.preventDefault();
+                handleCode();
+            }
+            // Ctrl/Cmd + Shift + S = Strikethrough
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                handleStrikethrough();
+            }
+            // Ctrl/Cmd + H = Heading
+            if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+                e.preventDefault();
+                handleHeading();
+            }
+            // Ctrl/Cmd + Shift + Q = Quote
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Q') {
+                e.preventDefault();
+                handleQuote();
+            }
+            // Ctrl/Cmd + Shift + L = List
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+                e.preventDefault();
+                handleList();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeNote, noteFormat, handleBold, handleItalic, handleLink]);
+    }, [activeNote, noteFormat, handleBold, handleItalic, handleLink, handleCode, handleCodeBlock, handleStrikethrough, handleHeading, handleQuote, handleList]);
 
     const showEditor = viewMode === 'edit' || viewMode === 'split' || noteFormat === 'text';
     const showPreview = noteFormat === 'markdown' && (viewMode === 'preview' || viewMode === 'split');
@@ -444,6 +486,27 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                     >
                         <Download size={18} />
                     </button>
+                    <button
+                        className="icon-btn"
+                        onClick={() => onDuplicate && onDuplicate(activeNote)}
+                        title="Duplicate Note"
+                    >
+                        <Copy size={18} />
+                    </button>
+                    <button
+                        className="icon-btn"
+                        onClick={onPrint}
+                        title="Print Note"
+                    >
+                        <Printer size={18} />
+                    </button>
+                    <button
+                        className={`icon-btn ${focusMode ? 'active' : ''}`}
+                        onClick={onToggleFocusMode}
+                        title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}
+                    >
+                        {focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
                 </div>
             </div>
 
@@ -455,6 +518,7 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                     padding: '8px 20px',
                     borderBottom: '1px solid var(--border-subtle)',
                     background: 'var(--glass-bg)',
+                    flexWrap: 'wrap',
                 }}>
                     <button className="icon-btn" onClick={handleBold} title="Bold (Ctrl+B)">
                         <Bold size={16} />
@@ -462,14 +526,28 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                     <button className="icon-btn" onClick={handleItalic} title="Italic (Ctrl+I)">
                         <Italic size={16} />
                     </button>
+                    <button className="icon-btn" onClick={handleStrikethrough} title="Strikethrough (Ctrl+Shift+S)">
+                        <Strikethrough size={16} />
+                    </button>
+                    <div style={{ width: '1px', background: 'var(--border-subtle)', margin: '0 4px' }}></div>
+                    <button className="icon-btn" onClick={handleHeading} title="Heading (Ctrl+H)">
+                        <Heading2 size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={handleQuote} title="Quote (Ctrl+Shift+Q)">
+                        <Quote size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={handleList} title="List (Ctrl+Shift+L)">
+                        <List size={16} />
+                    </button>
+                    <div style={{ width: '1px', background: 'var(--border-subtle)', margin: '0 4px' }}></div>
                     <button className="icon-btn" onClick={handleLink} title="Link (Ctrl+K)">
                         <Link size={16} />
                     </button>
-                    <button className="icon-btn" onClick={handleCode} title="Inline Code">
+                    <button className="icon-btn" onClick={handleCode} title="Inline Code (Ctrl+`)">
                         <Code size={16} />
                     </button>
-                    <button className="icon-btn" onClick={handleList} title="Bullet List">
-                        <List size={16} />
+                    <button className="icon-btn" onClick={handleCodeBlock} title="Code Block (Ctrl+Shift+C)">
+                        <Code2 size={16} />
                     </button>
                 </div>
             )}
@@ -548,6 +626,7 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                     <span>{wordCount} words</span>
                     <span>{charCount} chars</span>
                     <span>{lineCount} lines</span>
+                    <span style={{ color: 'var(--primary-color)' }}>{readingTime}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {saveStatus === 'saving' && (
