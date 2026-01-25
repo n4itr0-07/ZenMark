@@ -447,7 +447,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* justify-content: center; removed to prevent top clipping on overflow */
   padding: 48px;
   text-align: center;
   background: var(--bg-editor);
@@ -456,6 +456,16 @@ body {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+}
+
+.welcome-content-wrapper {
+  max-width: 900px;
+  width: 100%;
+  margin: auto;
+  /* Centers content vertically and horizontally safely */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .welcome-hero {
@@ -596,8 +606,7 @@ body {
 @media (max-width: 768px) {
   .welcome-container {
     padding: 32px 16px;
-    justify-content: flex-start;
-    /* Start from top on mobile to allow scrolling */
+    /* justify-content handled by margin:auto on wrapper now */
   }
 
   .welcome-hero {
