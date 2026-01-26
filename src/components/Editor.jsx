@@ -3,9 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2, Menu } from 'lucide-react';
+import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2, Menu, Share2 } from 'lucide-react';
 
-const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint, isMobile = false }) => {
+const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint, isMobile = false, onShare }) => {
     const [viewMode, setViewMode] = useState('split');
     const [copiedCode, setCopiedCode] = useState(null);
     const textareaRef = useRef(null);
@@ -486,6 +486,13 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                         title={`Download ${noteFormat === 'markdown' ? '.md' : '.txt'}`}
                     >
                         <Download size={18} />
+                    </button>
+                    <button
+                        className="icon-btn share-btn"
+                        onClick={onShare}
+                        title="Share Note"
+                    >
+                        <Share2 size={18} />
                     </button>
                     {!isMobile && (
                         <>

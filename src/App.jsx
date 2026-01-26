@@ -4,7 +4,10 @@ import Sidebar from './components/Sidebar';
 import Editor from './components/Editor';
 import AboutPage from './components/AboutPage';
 import WelcomeScreen from './components/WelcomeScreen';
+import SharedNoteViewer from './components/SharedNoteViewer';
+import ShareModal from './components/ShareModal';
 import { initDB, getAllNotes, createNewNote, saveNote, deleteNote } from './lib/storage';
+import { isShareRoute } from './lib/sharing';
 import Modal from './components/Modal';
 
 function App() {
@@ -25,6 +28,10 @@ function App() {
   // Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+
+  // Share State
+  const [viewingSharedNote, setViewingSharedNote] = useState(isShareRoute());
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Handle window resize for mobile detection
   useEffect(() => {
@@ -287,6 +294,43 @@ function App() {
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 
+  // Handle saving a shared note to user's notes
+  const handleSaveSharedNote = useCallback(async (noteData) => {
+    try {
+      const newNote = await createNewNote(noteData.format || 'markdown', 'blank');
+      const savedNote = {
+        ...newNote,
+        title: noteData.title || 'Shared Note',
+        content: noteData.content || '',
+      };
+      await saveNote(savedNote);
+      setNotes(prev => [savedNote, ...prev]);
+      setActiveNoteId(savedNote.id);
+      setViewingSharedNote(false);
+      // Update URL to remove share path
+      window.history.pushState({}, '', '/');
+    } catch (err) {
+      console.error('Failed to save shared note:', err);
+    }
+  }, []);
+
+  // Handle returning home from shared view
+  const handleGoHome = useCallback(() => {
+    setViewingSharedNote(false);
+    window.history.pushState({}, '', '/');
+  }, []);
+
+  // If viewing a shared note, render the viewer
+  if (viewingSharedNote) {
+    return (
+      <SharedNoteViewer
+        onSaveToNotes={handleSaveSharedNote}
+        onGoHome={handleGoHome}
+        theme={theme}
+      />
+    );
+  }
+
   if (loading) {
     return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading ZenMark...</div>;
   }
@@ -360,8 +404,15 @@ function App() {
           onDuplicate={handleDuplicateNote}
           onPrint={handlePrint}
           isMobile={isMobile}
+          onShare={() => setIsShareModalOpen(true)}
         />
       )}
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        note={activeNote}
+      />
 
       <Modal
         isOpen={isDeleteModalOpen}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Github, Heart, ExternalLink, FileText, Eye, Pin, Sun, Upload, Download, Keyboard, Palette, Copy, Printer, Maximize2, Clock, Strikethrough, Heading2, Quote, Code2, Bold, Italic, Link, Code, List } from 'lucide-react';
+import { ArrowLeft, Github, Heart, ExternalLink, FileText, Eye, Pin, Sun, Upload, Download, Keyboard, Palette, Copy, Printer, Maximize2, Clock, Strikethrough, Heading2, Quote, Code2, Bold, Italic, Link, Code, List, Share2, Lock } from 'lucide-react';
 
 const AboutPage = ({ onBack }) => {
     return (
@@ -86,6 +86,8 @@ const AboutPage = ({ onBack }) => {
                         {[
                             { icon: FileText, title: 'Full Markdown', desc: 'Headers, lists, tables, code blocks, blockquotes' },
                             { icon: Eye, title: 'Live Preview', desc: 'Split view, edit-only, or preview-only modes' },
+                            { icon: Share2, title: 'Secure Sharing', desc: 'Share notes via encrypted links' },
+                            { icon: Lock, title: 'End-to-End Encrypted', desc: 'Shared notes are encrypted in your browser' },
                             { icon: Palette, title: 'Syntax Highlighting', desc: '60+ languages with one-click copy' },
                             { icon: Pin, title: 'Pin Notes', desc: 'Keep important notes at the top' },
                             { icon: Sun, title: 'Light & Dark Themes', desc: 'Toggle with Alt+T, saves preference' },

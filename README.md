@@ -77,23 +77,25 @@ flowchart TD
 
 ## 🚀 Features
 
-| Feature                     | Description                                               |
-| --------------------------- | --------------------------------------------------------- |
-| 📝 **Full Markdown Support** | Headers, lists, tables, code blocks, and more             |
-| 👁️ **Live Preview**          | Real-time rendering with split view                       |
-| 🎨 **Syntax Highlighting**   | 60+ languages with copy button                            |
-| 📌 **Pin Notes**             | Keep important notes at the top                           |
-| 🌓 **Light & Dark Themes**   | Toggle with Alt+T                                         |
-| 📋 **Note Templates**        | 6 templates: blank, meeting, todo, journal, project, code |
-| ⏱️ **Reading Time**          | Estimated reading time based on word count                |
-| 📄 **Duplicate Notes**       | Create copies of existing notes                           |
-| 🎯 **Focus Mode**            | Distraction-free writing (hide sidebar)                   |
-| 🖨️ **Print Notes**           | Print formatted markdown                                  |
-| ⌨️ **Keyboard Shortcuts**    | Ctrl+S save, Alt+N new note, Ctrl+B bold                  |
-| 📥 **Import Files**          | Import .md and .txt files                                 |
-| 📤 **Export & Backup**       | Download notes or backup all as JSON                      |
-| 💾 **Local Storage**         | All data stored in IndexedDB - no server needed           |
-| 📱 **PWA Support**           | Install as app on mobile/desktop                          |
+| Feature                     | Description                                                   |
+| --------------------------- | ------------------------------------------------------------- |
+| 📝 **Full Markdown Support** | Headers, lists, tables, code blocks, and more                 |
+| 👁️ **Live Preview**          | Real-time rendering with split view                           |
+| 🔗 **Secure Sharing**        | Share notes via end-to-end encrypted links                    |
+| 🔒 **E2E Encrypted**         | Shared notes encrypted in browser, only link holders can read |
+| 🎨 **Syntax Highlighting**   | 60+ languages with copy button                                |
+| 📌 **Pin Notes**             | Keep important notes at the top                               |
+| 🌓 **Light & Dark Themes**   | Toggle with Alt+T                                             |
+| 📋 **Note Templates**        | 6 templates: blank, meeting, todo, journal, project, code     |
+| ⏱️ **Reading Time**          | Estimated reading time based on word count                    |
+| 📄 **Duplicate Notes**       | Create copies of existing notes                               |
+| 🎯 **Focus Mode**            | Distraction-free writing (hide sidebar)                       |
+| 🖨️ **Print Notes**           | Print formatted markdown                                      |
+| ⌨️ **Keyboard Shortcuts**    | Ctrl+S save, Alt+N new note, Ctrl+B bold                      |
+| 📥 **Import Files**          | Import .md and .txt files                                     |
+| 📤 **Export & Backup**       | Download notes or backup all as JSON                          |
+| 💾 **Local Storage**         | All data stored in IndexedDB - no server needed               |
+| 📱 **PWA Support**           | Install as app on mobile/desktop                              |
 
 ## 🖥️ Demo
 
@@ -137,7 +139,33 @@ flowchart LR
     style H fill:#f43f5e,color:#fff
 ```
 
-## 🛠️ Tech Stack
+## � Secure Sharing
+
+Share notes with anyone via encrypted links. Your note content is encrypted **in your browser** before being stored, and only the link holder can decrypt it.
+
+```mermaid
+flowchart LR
+    A[Click Share] --> B[Encrypt in Browser]
+    B --> C[Upload Encrypted]
+    C --> D[Get Short Link]
+    D --> E[Share Link]
+    E --> F[Recipient Opens]
+    F --> G[Decrypt in Browser]
+    G --> H[Read Note]
+    
+    style A fill:#3b82f6,color:#fff
+    style B fill:#22c55e,color:#fff
+    style G fill:#22c55e,color:#fff
+    style H fill:#8b5cf6,color:#fff
+```
+
+**How it works:**
+- 🔒 **AES-256-GCM encryption** — Military-grade encryption
+- 🔑 **Key in URL fragment** — Decryption key never sent to any server
+- ⏰ **Expiration options** — 5 min to never
+- 👁️ **Read-only** — Recipients can view, download, or save to their notes
+
+## �🛠️ Tech Stack
 
 ```mermaid
 flowchart LR
