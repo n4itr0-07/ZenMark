@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>ZenMark</title>
+    <script type="text/javascript">
+
+        var pathSegmentsToKeep = 0;
+        var l = window.location;
+
+
+        sessionStorage.setItem('spa-redirect', JSON.stringify({
+            path: l.pathname + l.search + l.hash
+        }));
+
+
+        l.replace(
+            l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+            l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?redirect=true'
+        );
+    </script>
+</head>
+
+<body>
+    <noscript>
+        <h1>ZenMark</h1>
+        <p>JavaScript is required to view shared notes.</p>
+        <p><a href="/">Go to ZenMark</a></p>
+    </noscript>
+</body>
+
+</html>

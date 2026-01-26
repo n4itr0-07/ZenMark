@@ -35,6 +35,19 @@
 
 <body>
   <div id="root"></div>
+  <!-- SPA Redirect Handler for GitHub Pages -->
+  <script type="text/javascript">
+    (function () {
+      var redirect = sessionStorage.getItem('spa-redirect');
+      if (redirect) {
+        sessionStorage.removeItem('spa-redirect');
+        var data = JSON.parse(redirect);
+        if (data.path && data.path !== '/' && data.path !== '/?redirect=true') {
+          history.replaceState(null, null, data.path);
+        }
+      }
+    })();
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 
