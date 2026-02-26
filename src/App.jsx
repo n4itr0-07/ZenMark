@@ -179,6 +179,7 @@ function App() {
   const handleDeleteNote = async (id) => {
     setNoteToDelete(id);
     setIsDeleteModalOpen(true);
+    if (isMobile) setSidebarOpen(false);
   };
 
   const confirmDelete = async () => {
