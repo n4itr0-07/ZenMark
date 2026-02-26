@@ -7,12 +7,15 @@ const WelcomeScreen = ({ onCreateNote, isMobile, onOpenSidebar }) => {
             <div className="welcome-content-wrapper">
                 {/* Hero */}
                 <div className="welcome-hero">
+                    <div className="welcome-badge">
+                        ✦ Markdown Notes
+                    </div>
                     <h1 className="welcome-title">
-                        Welcome to ZenMark
+                        Write. Think. Zen.
                     </h1>
                     <p className="welcome-subtitle">
-                        A beautiful, offline-capable markdown note-taking app.<br />
-                        <strong style={{ color: 'var(--text-primary)' }}>No account needed. 100% private.</strong>
+                        A beautiful, offline-capable markdown editor.{' '}
+                        <strong style={{ color: 'var(--text-primary)' }}>No account. No tracking. 100% yours.</strong>
                     </p>
                 </div>
 
@@ -22,10 +25,9 @@ const WelcomeScreen = ({ onCreateNote, isMobile, onOpenSidebar }) => {
                         onClick={() => onCreateNote('blank')}
                         className="welcome-btn-primary"
                     >
-                        <Plus size={20} />
-                        Create Your First Note
+                        <Plus size={18} />
+                        New Note
                     </button>
-                    {/* Always show Open Menu on mobile, or check isMobile prop logic */}
                     {isMobile && (
                         <button
                             onClick={onOpenSidebar}
@@ -41,20 +43,18 @@ const WelcomeScreen = ({ onCreateNote, isMobile, onOpenSidebar }) => {
                     {[
                         { icon: FileText, title: 'Full Markdown', desc: 'Headers, lists, code blocks, tables & more' },
                         { icon: Lock, title: '100% Private', desc: 'All data stays on your device' },
-                        { icon: Wifi, title: 'Works Offline', desc: 'No internet? No problem!' },
-                        { icon: Zap, title: 'Fast & Light', desc: 'Instant loading, zero lag' },
+                        { icon: Wifi, title: 'Works Offline', desc: 'No internet required once loaded' },
+                        { icon: Zap, title: 'Instant & Fast', desc: 'Zero lag, instant loading' },
                         { icon: Download, title: 'Export Anytime', desc: 'Download as .md or backup all' },
-                        { icon: Keyboard, title: 'Keyboard Shortcuts', desc: 'Ctrl+B, Ctrl+I, Ctrl+K & more' },
+                        { icon: Keyboard, title: 'Shortcuts', desc: 'Ctrl+B, Ctrl+I, Ctrl+K & more' },
                     ].map((feature, i) => (
                         <div key={i} className="feature-card">
-                            <feature.icon size={24} color="var(--primary-color)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div className="feature-icon-wrap">
+                                <feature.icon size={18} color="var(--primary-color)" />
+                            </div>
                             <div>
-                                <h3 className="feature-title">
-                                    {feature.title}
-                                </h3>
-                                <p className="feature-desc">
-                                    {feature.desc}
-                                </p>
+                                <h3 className="feature-title">{feature.title}</h3>
+                                <p className="feature-desc">{feature.desc}</p>
                             </div>
                         </div>
                     ))}
@@ -62,20 +62,20 @@ const WelcomeScreen = ({ onCreateNote, isMobile, onOpenSidebar }) => {
 
                 {/* Quick Start Guide */}
                 <div className="quick-start-card">
-                    <h3 className="feature-title" style={{ fontSize: '1rem', marginBottom: '16px' }}>
-                        🚀 Quick Start
+                    <h3 className="feature-title" style={{ fontSize: '0.9rem', marginBottom: '14px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Quick Start
                     </h3>
                     <ol className="quick-start-list">
-                        <li>Click <strong>"Create Your First Note"</strong> above</li>
+                        <li>Click <strong style={{ color: 'var(--text-primary)' }}>"New Note"</strong> above</li>
                         <li>Write in Markdown (or plain text)</li>
-                        <li>Your notes auto-save locally</li>
-                        <li>Use the sidebar to manage all your notes</li>
+                        <li>Notes auto-save to your browser</li>
+                        <li>Use the sidebar to manage notes</li>
                     </ol>
                 </div>
 
                 {/* Footer hint */}
                 <p className="welcome-footer">
-                    💡 Tip: {isMobile ? 'Tap the ☰ menu' : 'Use the sidebar'} to access templates, themes & more
+                    💡 {isMobile ? 'Tap ☰ menu' : 'Use the sidebar'} for templates, themes & tools
                 </p>
             </div>
         </div>

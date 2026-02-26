@@ -22,10 +22,8 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
             note.content.toLowerCase().includes(search.toLowerCase())
         )
         .sort((a, b) => {
-            // Pinned notes first
             if (a.pinned && !b.pinned) return -1;
             if (!a.pinned && b.pinned) return 1;
-            // Then by date
             return new Date(b.updatedAt) - new Date(a.updatedAt);
         });
 
@@ -38,12 +36,24 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
         const diffDays = Math.floor(diffMs / 86400000);
 
         if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins} min ago`;
+        if (diffMins < 60) return `${diffMins}m ago`;
         if (diffHours < 24) return `${diffHours}h ago`;
         if (diffDays === 1) return 'Yesterday';
-        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
 
         return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+    };
+
+    const getPreview = (content) => {
+        if (!content) return '';
+        const cleaned = content
+            .replace(/#{1,6}\s/g, '')
+            .replace(/\*\*|__|\*|_|~~|`/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/^\s*[-*+>]\s/gm, '')
+            .trim();
+        const firstLine = cleaned.split('\n').find(l => l.trim());
+        return firstLine ? firstLine.trim().slice(0, 72) : '';
     };
 
     const handleCreateFromTemplate = (templateId) => {
@@ -54,25 +64,36 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
     return (
         <aside style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--bg-sidebar)' }}>
             {/* Header */}
-            <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
-                <div className="sidebar-heading" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>ZenMark</div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 16px',
+                borderBottom: '1px solid var(--border-subtle)',
+                flexShrink: 0,
+            }}>
+                <div className="sidebar-brand">
+                    <div className="sidebar-brand-icon">✦</div>
+                    ZenMark
+                    <span className="note-count-badge">{notes.length}</span>
+                </div>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <button
                         className="icon-btn"
                         onClick={onToggleTheme}
                         title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                     >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                        {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
                             className="icon-btn active"
                             onClick={() => setShowTemplates(!showTemplates)}
                             title="New Note (Alt+N)"
-                            style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '2px', padding: '8px 10px' }}
                         >
-                            <Plus size={20} />
-                            <ChevronDown size={12} />
+                            <Plus size={18} />
+                            <ChevronDown size={11} />
                         </button>
                         {showTemplates && (
                             <>
@@ -84,36 +105,24 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                                     position: 'absolute',
                                     top: '100%',
                                     right: 0,
-                                    marginTop: '4px',
-                                    background: 'var(--bg-card)',
+                                    marginTop: '6px',
+                                    background: 'var(--glass-bg)',
+                                    backdropFilter: 'blur(12px)',
                                     border: '1px solid var(--border-subtle)',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                    borderRadius: '10px',
+                                    boxShadow: 'var(--glass-shadow)',
                                     zIndex: 99,
-                                    minWidth: '160px',
+                                    minWidth: '168px',
                                     overflow: 'hidden',
+                                    padding: '4px',
                                 }}>
                                     {templates.map((t) => (
                                         <button
                                             key={t.id}
+                                            className="template-item"
                                             onClick={() => handleCreateFromTemplate(t.id)}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '10px',
-                                                width: '100%',
-                                                padding: '10px 14px',
-                                                border: 'none',
-                                                background: 'transparent',
-                                                color: 'var(--text-primary)',
-                                                cursor: 'pointer',
-                                                fontSize: '0.9rem',
-                                                textAlign: 'left',
-                                            }}
-                                            onMouseEnter={(e) => e.target.style.background = 'var(--bg-sidebar)'}
-                                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
                                         >
-                                            <t.icon size={16} color="var(--text-secondary)" />
+                                            <t.icon size={15} color="var(--text-secondary)" />
                                             {t.name}
                                         </button>
                                     ))}
@@ -125,105 +134,102 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
             </div>
 
             {/* Search */}
-            <div style={{ padding: '0 12px', marginTop: '12px' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'var(--bg-card)',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
-                    border: '1px solid var(--border-subtle)'
-                }}>
-                    <Search size={14} color="var(--text-muted)" />
+            <div style={{ padding: '12px 12px 8px' }}>
+                <div className="search-bar">
+                    <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                     <input
                         type="text"
                         placeholder="Search notes..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            marginLeft: '8px',
-                            color: 'var(--text-primary)',
-                            width: '100%',
-                            outline: 'none',
-                            fontSize: '0.9rem'
-                        }}
                     />
+                    {search && (
+                        <button
+                            className="icon-btn"
+                            onClick={() => setSearch('')}
+                            style={{ padding: '2px', minWidth: 'unset', minHeight: 'unset' }}
+                            title="Clear search"
+                        >
+                            <X size={13} />
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Notes List - Scrollable */}
-            <div className="file-list" style={{ flex: 1, overflow: 'auto' }}>
+            {/* Notes List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
                 {filteredNotes.length === 0 && (
-                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                        {search ? 'No notes found' : 'No notes yet'}
+                    <div style={{ padding: '28px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        {search ? 'No matching notes' : 'No notes yet'}
                     </div>
                 )}
 
                 {filteredNotes.map(note => (
                     <div
                         key={note.id}
-                        className={`file-item ${note.id === activeNoteId ? 'active' : ''}`}
+                        className={`note-card ${note.id === activeNoteId ? 'active' : ''}`}
                         onClick={() => onSelectNote(note.id)}
                     >
-                        <div style={{ position: 'relative' }}>
-                            <FileText size={16} />
-                            {note.pinned && (
-                                <Pin
-                                    size={8}
+                        <div className="note-card-header">
+                            <div className="note-card-icon">
+                                <FileText size={14} />
+                                {note.pinned && (
+                                    <Pin
+                                        size={7}
+                                        style={{
+                                            position: 'absolute',
+                                            top: -3,
+                                            right: -3,
+                                            color: 'var(--warning)',
+                                            fill: 'var(--warning)',
+                                        }}
+                                    />
+                                )}
+                            </div>
+                            <div className="note-card-meta">
+                                <div className="note-card-title">{note.title || 'Untitled Note'}</div>
+                                <div className="note-card-date">{formatDate(note.updatedAt)}</div>
+                            </div>
+                            <div className="note-card-actions">
+                                <button
+                                    className="icon-btn"
                                     style={{
-                                        position: 'absolute',
-                                        top: -4,
-                                        right: -4,
-                                        color: 'var(--warning)',
-                                        fill: 'var(--warning)'
+                                        padding: '3px',
+                                        color: note.pinned ? 'var(--warning)' : 'var(--text-muted)',
                                     }}
-                                />
-                            )}
-                        </div>
-                        <div style={{ flex: 1, marginLeft: '10px', overflow: 'hidden' }}>
-                            <div className="file-name">{note.title || 'Untitled Note'}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                {formatDate(note.updatedAt)}
+                                    onClick={(e) => { e.stopPropagation(); onTogglePin(note.id); }}
+                                    title={note.pinned ? 'Unpin Note' : 'Pin Note'}
+                                >
+                                    <Pin size={12} style={note.pinned ? { fill: 'var(--warning)' } : {}} />
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    style={{ padding: '3px' }}
+                                    onClick={(e) => { e.stopPropagation(); onDeleteNote(note.id); }}
+                                    title="Delete Note"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '2px' }}>
-                            <button
-                                className="icon-btn"
-                                style={{
-                                    padding: '4px',
-                                    opacity: note.pinned ? 1 : 0.5,
-                                    color: note.pinned ? 'var(--warning)' : 'var(--text-muted)'
-                                }}
-                                onClick={(e) => { e.stopPropagation(); onTogglePin(note.id); }}
-                                title={note.pinned ? 'Unpin Note' : 'Pin Note'}
-                            >
-                                <Pin size={12} style={note.pinned ? { fill: 'var(--warning)' } : {}} />
-                            </button>
-                            <button
-                                className="icon-btn"
-                                style={{ padding: '4px', opacity: 0.6 }}
-                                onClick={(e) => { e.stopPropagation(); onDeleteNote(note.id); }}
-                                title="Delete Note"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
+                        {note.content && (
+                            <div className="note-card-preview">
+                                {getPreview(note.content)}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
 
-            {/* Footer - Fixed at bottom */}
+            {/* Footer */}
             <div style={{
-                padding: '12px',
+                padding: '10px 12px',
                 borderTop: '1px solid var(--border-subtle)',
                 display: 'flex',
-                gap: '8px',
+                gap: '4px',
                 justifyContent: 'center',
                 flexShrink: 0,
             }}>
-                {/* Hidden file input for import */}
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -236,14 +242,14 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                     onClick={() => fileInputRef.current?.click()}
                     title="Import .md or .txt file"
                 >
-                    <Upload size={18} />
+                    <Upload size={17} />
                 </button>
                 <button
                     className="icon-btn"
                     onClick={onExportAll}
                     title="Export all notes (backup)"
                 >
-                    <Download size={18} />
+                    <Download size={17} />
                 </button>
                 <a
                     href="https://github.com/n4itr0-07/ZenMark"
@@ -253,14 +259,14 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                     title="View on GitHub"
                     style={{ textDecoration: 'none' }}
                 >
-                    <Github size={18} />
+                    <Github size={17} />
                 </a>
                 <button
                     className="icon-btn"
                     onClick={onShowAbout}
                     title="About ZenMark"
                 >
-                    <Info size={18} />
+                    <Info size={17} />
                 </button>
             </div>
         </aside>
