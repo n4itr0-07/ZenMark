@@ -147,7 +147,7 @@ body {
 
 .icon-btn:active {
   background: rgba(59, 130, 246, 0.2);
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .icon-btn.active {
@@ -164,12 +164,32 @@ body {
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.08s ease, box-shadow 0.2s ease;
   min-height: 44px;
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.08);
+}
+
+button:focus-visible,
+.icon-btn:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-danger:focus-visible,
+.welcome-btn-primary:focus-visible,
+.welcome-btn-secondary:focus-visible,
+.expire-btn:focus-visible,
+.share-copy-btn:focus-visible,
+.share-generate-btn:focus-visible,
+.shared-home-link:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 /* ========== SIDEBAR ========== */
@@ -306,6 +326,7 @@ body {
   .toolbar {
     padding: 8px 12px;
     gap: 4px;
+    flex-wrap: wrap;
   }
 
   .toolbar .icon-btn {
@@ -439,6 +460,30 @@ body {
     background: rgba(59, 130, 246, 0.2);
     color: var(--primary-color);
   }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .welcome-btn-primary,
+  .welcome-btn-secondary,
+  .expire-btn,
+  .share-copy-btn,
+  .share-generate-btn,
+  .shared-home-link {
+    min-height: 44px;
+  }
+
+  .btn-primary:active,
+  .btn-secondary:active,
+  .btn-danger:active,
+  .welcome-btn-primary:active,
+  .welcome-btn-secondary:active,
+  .expire-btn:active,
+  .share-copy-btn:active,
+  .share-generate-btn:active,
+  .shared-home-link:active {
+    transform: scale(0.98);
+  }
 }
 
 /* ========== WELCOME SCREEN ========== */
@@ -453,6 +498,7 @@ body {
   background: var(--bg-editor);
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -523,6 +569,10 @@ body {
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
 }
 
+.welcome-btn-primary:active {
+  transform: scale(0.98);
+}
+
 .welcome-btn-secondary {
   display: flex;
   align-items: center;
@@ -535,6 +585,15 @@ body {
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
+}
+
+.welcome-btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--primary-color);
+}
+
+.welcome-btn-secondary:active {
+  transform: scale(0.98);
 }
 
 .welcome-features-grid {
@@ -656,6 +715,8 @@ body {
 /* ========== SHARE MODAL ========== */
 .share-modal {
   max-width: 500px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
 }
 
 .share-loading {
@@ -736,6 +797,10 @@ body {
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
 }
 
+.share-copy-btn:active {
+  transform: scale(0.98);
+}
+
 .share-copy-btn.copied {
   background: linear-gradient(135deg, #22c55e, #16a34a);
   box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
@@ -801,11 +866,16 @@ body {
   color: var(--text-primary);
 }
 
+.expire-btn:active {
+  transform: scale(0.98);
+}
+
 .expire-btn.active {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--primary-color);
   border-color: var(--primary-color);
-  color: var(--primary-color);
+  color: #ffffff;
   font-weight: 500;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 .share-info-box {
@@ -1096,6 +1166,7 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .shared-markdown {
