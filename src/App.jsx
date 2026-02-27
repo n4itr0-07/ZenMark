@@ -6,6 +6,7 @@ import AboutPage from './components/AboutPage';
 import WelcomeScreen from './components/WelcomeScreen';
 import SharedNoteViewer from './components/SharedNoteViewer';
 import ShareModal from './components/ShareModal';
+import ShortcutsModal from './components/ShortcutsModal';
 import { initDB, getAllNotes, createNewNote, saveNote, deleteNote } from './lib/storage';
 import { isShareRoute } from './lib/sharing';
 import Modal from './components/Modal';
@@ -13,8 +14,8 @@ import Modal from './components/Modal';
 function App() {
   const [notes, setNotes] = useState([]);
   const [activeNoteId, setActiveNoteId] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile sidebar
-  const [sidebarVisible, setSidebarVisible] = useState(true); // Desktop sidebar toggle
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [showAbout, setShowAbout] = useState(false);
   const [saveStatus, setSaveStatus] = useState('saved');
@@ -25,13 +26,12 @@ function App() {
   const saveTimeoutRef = useRef(null);
   const editorRef = useRef(null);
 
-  // Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
 
-  // Share State
   const [viewingSharedNote, setViewingSharedNote] = useState(isShareRoute());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   // Handle window resize for mobile detection
   useEffect(() => {
@@ -46,6 +46,31 @@ function App() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    let startX = 0, startY = 0;
+    const onTouchStart = (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e) => {
+      const deltaX = e.changedTouches[0].clientX - startX;
+      const deltaY = e.changedTouches[0].clientY - startY;
+      if (Math.abs(deltaX) < 60 || Math.abs(deltaY) > Math.abs(deltaX)) return;
+      if (deltaX > 0 && startX < 30) {
+        setSidebarOpen(true);
+      } else if (deltaX < 0 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isMobile, sidebarOpen]);
 
   // Apply theme to document
   useEffect(() => {
@@ -89,31 +114,55 @@ function App() {
     }
   }, []);
 
+  const deriveTitle = useCallback((content) => {
+    if (!content) return '';
+    const headingMatch = content.match(/^#{1,3}\s+(.+)$/m);
+    if (headingMatch) {
+      const title = headingMatch[1].trim();
+      return title.length > 50 ? title.substring(0, 47) + '...' : title;
+    }
+    const firstLine = content.split('\n').find(l => l.trim().length > 0);
+    if (firstLine) {
+      const clean = firstLine.replace(/^[#>*\-\s]+/, '').trim();
+      return clean.length > 50 ? clean.substring(0, 47) + '...' : clean;
+    }
+    return '';
+  }, []);
+
   const handleUpdateNote = useCallback(async (updatedNote) => {
     setSaveStatus('unsaved');
 
-    // Clear previous timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Update state immediately for responsiveness
+    const activeNote = notes.find(n => n.id === updatedNote.id);
+    const titleIsDefault = updatedNote.title === 'Untitled Note' ||
+      (activeNote && activeNote.title === updatedNote.title && updatedNote.content !== activeNote?.content);
+
+    let noteToSave = updatedNote;
+    if (titleIsDefault && updatedNote.title === 'Untitled Note') {
+      const autoTitle = deriveTitle(updatedNote.content);
+      if (autoTitle) {
+        noteToSave = { ...updatedNote, title: autoTitle };
+      }
+    }
+
     setNotes(prev => prev.map((note) =>
-      note.id === updatedNote.id ? updatedNote : note
+      note.id === noteToSave.id ? noteToSave : note
     ));
 
-    // Debounced save (300ms after last keystroke)
     saveTimeoutRef.current = setTimeout(async () => {
       setSaveStatus('saving');
       try {
-        await saveNote(updatedNote);
+        await saveNote(noteToSave);
         setSaveStatus('saved');
       } catch (err) {
         console.error("Failed to save note:", err);
         setSaveStatus('unsaved');
       }
     }, 300);
-  }, []);
+  }, [notes, deriveTitle]);
 
   // Toggle pin for a note
   const handleTogglePin = useCallback(async (noteId) => {
@@ -143,23 +192,25 @@ function App() {
     }
   }, [notes, activeNoteId]);
 
-  // Keyboard shortcuts
+
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl+S or Cmd+S - Save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         handleForceSave();
       }
-      // Alt+N - New note (using Alt to avoid browser's Ctrl+N)
       if (e.altKey && e.key === 'n') {
         e.preventDefault();
         handleCreateNote();
       }
-      // Alt+T - Toggle theme
       if (e.altKey && e.key === 't') {
         e.preventDefault();
         toggleTheme();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setIsShortcutsOpen(prev => !prev);
       }
     };
 
@@ -247,8 +298,8 @@ function App() {
     const exportData = {
       version: '1.0',
       exportedAt: new Date().toISOString(),
-      notes: notes.map(({ id, title, content, format, pinned, createdAt, updatedAt }) => ({
-        id, title, content, format, pinned, createdAt, updatedAt
+      notes: notes.map(({ id, title, content, format, pinned, tags, createdAt, updatedAt }) => ({
+        id, title, content, format, pinned, tags: tags || [], createdAt, updatedAt
       }))
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -405,6 +456,11 @@ function App() {
           onPrint={handlePrint}
           isMobile={isMobile}
           onShare={() => setIsShareModalOpen(true)}
+          notes={notes}
+          onNavigateToNote={(noteId) => {
+            setActiveNoteId(noteId);
+            if (isMobile) setSidebarOpen(false);
+          }}
         />
       )}
 
@@ -413,6 +469,12 @@ function App() {
         onClose={() => setIsShareModalOpen(false)}
         note={activeNote}
       />
+
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
+
 
       <Modal
         isOpen={isDeleteModalOpen}

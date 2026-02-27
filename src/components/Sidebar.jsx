@@ -1,9 +1,23 @@
-import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download, ChevronDown, FileEdit, CheckSquare, BookOpen, FolderOpen, Code, X } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { Plus, Trash2, Search, FileText, Github, Info, Pin, Sun, Moon, Upload, Download, ChevronDown, FileEdit, CheckSquare, BookOpen, FolderOpen, Code, X, Tag } from 'lucide-react';
+
+const TAG_COLORS = [
+    '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+    '#10b981', '#ef4444', '#06b6d4', '#f97316',
+];
+
+const getTagColor = (tag) => {
+    let hash = 0;
+    for (let i = 0; i < tag.length; i++) {
+        hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+};
 
 const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote, onTogglePin, onShowAbout, theme, onToggleTheme, onImportFile, onExportAll, onCloseSidebar, isMobile }) => {
     const [search, setSearch] = useState('');
     const [showTemplates, setShowTemplates] = useState(false);
+    const [activeTag, setActiveTag] = useState(null);
     const fileInputRef = useRef(null);
 
     const templates = [
@@ -15,19 +29,34 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
         { id: 'code', name: 'Code Snippet', icon: Code },
     ];
 
-    // Filter and sort notes - pinned first, then by date
-    const filteredNotes = notes
-        .filter(note =>
-            note.title.toLowerCase().includes(search.toLowerCase()) ||
-            note.content.toLowerCase().includes(search.toLowerCase())
-        )
-        .sort((a, b) => {
-            // Pinned notes first
-            if (a.pinned && !b.pinned) return -1;
-            if (!a.pinned && b.pinned) return 1;
-            // Then by date
-            return new Date(b.updatedAt) - new Date(a.updatedAt);
+    const allTags = useMemo(() => {
+        const tagSet = new Set();
+        notes.forEach(note => {
+            if (Array.isArray(note.tags)) {
+                note.tags.forEach(tag => tagSet.add(tag));
+            }
         });
+        return [...tagSet].sort();
+    }, [notes]);
+
+    const filteredNotes = useMemo(() => {
+        const searchLower = search.toLowerCase();
+        return notes
+            .filter(note => {
+                const matchesSearch = !search ||
+                    note.title.toLowerCase().includes(searchLower) ||
+                    note.content.toLowerCase().includes(searchLower) ||
+                    (Array.isArray(note.tags) && note.tags.some(t => t.toLowerCase().includes(searchLower)));
+                const matchesTag = !activeTag ||
+                    (Array.isArray(note.tags) && note.tags.includes(activeTag));
+                return matchesSearch && matchesTag;
+            })
+            .sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.updatedAt) - new Date(a.updatedAt);
+            });
+    }, [notes, search, activeTag]);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -53,7 +82,6 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
 
     return (
         <aside style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--bg-sidebar)' }}>
-            {/* Header */}
             <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
                 <div className="sidebar-heading" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>ZenMark</div>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -124,7 +152,6 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                 </div>
             </div>
 
-            {/* Search */}
             <div style={{ padding: '0 12px', marginTop: '12px' }}>
                 <div style={{
                     display: 'flex',
@@ -150,14 +177,49 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                             fontSize: '0.9rem'
                         }}
                     />
+                    {search && (
+                        <button
+                            className="icon-btn"
+                            onClick={() => setSearch('')}
+                            style={{ padding: '2px', flexShrink: 0 }}
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Notes List - Scrollable */}
+            {allTags.length > 0 && (
+                <div className="tag-filter-bar">
+                    <button
+                        className={`tag-filter-chip ${!activeTag ? 'active' : ''}`}
+                        onClick={() => setActiveTag(null)}
+                    >
+                        All
+                    </button>
+                    {allTags.map(tag => (
+                        <button
+                            key={tag}
+                            className={`tag-filter-chip ${activeTag === tag ? 'active' : ''}`}
+                            onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                            style={{
+                                '--chip-color': getTagColor(tag),
+                            }}
+                        >
+                            <span
+                                className="tag-dot"
+                                style={{ background: getTagColor(tag) }}
+                            />
+                            {tag}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <div className="file-list" style={{ flex: 1, overflow: 'auto' }}>
                 {filteredNotes.length === 0 && (
                     <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                        {search ? 'No notes found' : 'No notes yet'}
+                        {search || activeTag ? 'No notes found' : 'No notes yet'}
                     </div>
                 )}
 
@@ -184,8 +246,28 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                         </div>
                         <div style={{ flex: 1, marginLeft: '10px', overflow: 'hidden' }}>
                             <div className="file-name">{note.title || 'Untitled Note'}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                {formatDate(note.updatedAt)}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    {formatDate(note.updatedAt)}
+                                </span>
+                                {Array.isArray(note.tags) && note.tags.length > 0 && (
+                                    <div style={{ display: 'flex', gap: '3px', overflow: 'hidden' }}>
+                                        {note.tags.slice(0, 3).map(tag => (
+                                            <span
+                                                key={tag}
+                                                className="tag-mini"
+                                                style={{ '--tag-color': getTagColor(tag) }}
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                        {note.tags.length > 3 && (
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                                +{note.tags.length - 3}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: '2px' }}>
@@ -214,7 +296,6 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                 ))}
             </div>
 
-            {/* Footer - Fixed at bottom */}
             <div style={{
                 padding: '12px',
                 borderTop: '1px solid var(--border-subtle)',
@@ -223,7 +304,6 @@ const Sidebar = ({ notes, activeNoteId, onSelectNote, onCreateNote, onDeleteNote
                 justifyContent: 'center',
                 flexShrink: 0,
             }}>
-                {/* Hidden file input for import */}
                 <input
                     type="file"
                     ref={fileInputRef}

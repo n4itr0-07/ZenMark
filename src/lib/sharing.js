@@ -7,8 +7,9 @@
 // PrivateBin public instance
 const PRIVATEBIN_HOST = 'https://privatebin.net';
 
-// Base58 alphabet (Bitcoin style, no 0, O, I, l)
 const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+import { encryptContent, decryptContent } from './crypto';
 
 /**
  * Encode bytes to base58
@@ -215,19 +216,22 @@ async function decryptFromPrivateBin(payload, masterKey) {
  * Create a share link by posting to PrivateBin
  */
 export async function createShareLink(noteData, options = {}) {
-    const { expire = '1week' } = options;
+    const { expire = '1week', password } = options;
 
     try {
         if (!crypto.subtle) {
             return { success: false, error: 'Your browser does not support secure sharing.' };
         }
 
-        // Combine title and content
-        const fullContent = noteData.title
+        let fullContent = noteData.title
             ? `# ${noteData.title}\n\n${noteData.content}`
             : noteData.content;
 
-        // Encrypt
+        if (password) {
+            const encrypted = await encryptContent(fullContent, password);
+            fullContent = JSON.stringify({ passwordProtected: true, data: encrypted });
+        }
+
         const { masterKey, payload } = await encryptForPrivateBin(
             fullContent,
             noteData.format || 'markdown'
@@ -277,10 +281,8 @@ export async function createShareLink(noteData, options = {}) {
  */
 export async function fetchSharedNote(pasteId, keyBase58) {
     try {
-        // Decode the key
         const masterKey = base58Decode(keyBase58);
 
-        // Fetch from PrivateBin
         const response = await fetch(`${PRIVATEBIN_HOST}/?${pasteId}`, {
             headers: {
                 'X-Requested-With': 'JSONHttpRequest'
@@ -296,17 +298,29 @@ export async function fetchSharedNote(pasteId, keyBase58) {
             return { success: false, error: result.message || 'Failed to fetch shared note.' };
         }
 
-        // Decrypt
         const decrypted = await decryptFromPrivateBin(result, masterKey);
+        let rawContent = decrypted.content;
 
-        // Extract title if present (first line starting with #)
+        try {
+            const parsed = JSON.parse(rawContent);
+            if (parsed.passwordProtected) {
+                return {
+                    success: true,
+                    passwordProtected: true,
+                    encryptedData: parsed.data,
+                    format: decrypted.format,
+                    timeToLive: result.meta?.time_to_live
+                };
+            }
+        } catch { }
+
         let title = 'Shared Note';
-        let content = decrypted.content;
+        let content = rawContent;
 
         const lines = content.split('\n');
         if (lines[0]?.startsWith('# ')) {
             title = lines[0].slice(2).trim();
-            content = lines.slice(2).join('\n'); // Skip title and blank line
+            content = lines.slice(2).join('\n');
         }
 
         return {
@@ -322,6 +336,22 @@ export async function fetchSharedNote(pasteId, keyBase58) {
         console.error('Failed to fetch shared note:', err);
         return { success: false, error: 'Failed to decrypt shared note. The link may be invalid.' };
     }
+}
+
+export async function decryptSharedPassword(encryptedData, password) {
+    const decrypted = await decryptContent(encryptedData, password);
+    if (decrypted === null) return null;
+
+    let title = 'Shared Note';
+    let content = decrypted;
+
+    const lines = content.split('\n');
+    if (lines[0]?.startsWith('# ')) {
+        title = lines[0].slice(2).trim();
+        content = lines.slice(2).join('\n');
+    }
+
+    return { title, content };
 }
 
 /**

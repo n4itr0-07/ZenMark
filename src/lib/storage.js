@@ -3,13 +3,18 @@ import { openDB } from 'idb';
 const DB_NAME = 'zenmark-db';
 const STORE_NAME = 'notes';
 
-// Initialize DB
 export const initDB = async () => {
-    const db = await openDB(DB_NAME, 1, {
-        upgrade(db) {
+    const db = await openDB(DB_NAME, 2, {
+        upgrade(db, oldVersion, _newVersion, transaction) {
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
                 store.createIndex('updatedAt', 'updatedAt');
+                store.createIndex('tags', 'tags', { multiEntry: true });
+            } else if (oldVersion < 2) {
+                const store = transaction.objectStore(STORE_NAME);
+                if (!store.indexNames.contains('tags')) {
+                    store.createIndex('tags', 'tags', { multiEntry: true });
+                }
             }
         },
     });
@@ -22,8 +27,6 @@ export const initDB = async () => {
 
     return db;
 };
-
-// CRUD Operations
 
 export const getAllNotes = async () => {
     const db = await initDB();
@@ -63,7 +66,6 @@ const generateUUID = () => {
     });
 };
 
-// Note Templates
 export const noteTemplates = {
     blank: {
         name: 'Blank Note',
@@ -249,6 +251,17 @@ console.log(result);
     }
 };
 
+export const getAllTags = async () => {
+    const notes = await getAllNotes();
+    const tagSet = new Set();
+    notes.forEach(note => {
+        if (Array.isArray(note.tags)) {
+            note.tags.forEach(tag => tagSet.add(tag));
+        }
+    });
+    return [...tagSet].sort();
+};
+
 export const createNewNote = async (format = 'markdown', template = 'blank') => {
     const id = generateUUID();
     const templateData = noteTemplates[template] || noteTemplates.blank;
@@ -261,6 +274,7 @@ export const createNewNote = async (format = 'markdown', template = 'blank') => 
         title: defaultTitle,
         content: defaultContent,
         format: format, // 'markdown' or 'text'
+        tags: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     };

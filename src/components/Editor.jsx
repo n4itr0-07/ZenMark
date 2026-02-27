@@ -3,12 +3,44 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2, Menu, Share2 } from 'lucide-react';
+import { Eye, Edit3, Columns, Download, Type, Hash, PanelLeftClose, PanelLeft, Copy, Check, Save, Loader2, Bold, Italic, Link, Code, List, Maximize2, Minimize2, Printer, Strikethrough, Heading2, Quote, Code2, Menu, Share2, Tag, X, Table, ListChecks, Image, Minus, Heading1, Lock, Unlock } from 'lucide-react';
 
-const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint, isMobile = false, onShare }) => {
+const TAG_COLORS = [
+    '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+    '#10b981', '#ef4444', '#06b6d4', '#f97316',
+];
+
+const getTagColor = (tag) => {
+    let hash = 0;
+    for (let i = 0; i < tag.length; i++) {
+        hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+};
+
+const SLASH_COMMANDS = [
+    { id: 'h1', icon: Heading1, label: 'Heading 1', desc: 'Large heading', insert: '# ' },
+    { id: 'h2', icon: Heading2, label: 'Heading 2', desc: 'Medium heading', insert: '## ' },
+    { id: 'list', icon: List, label: 'Bullet List', desc: 'Unordered list', insert: '- ' },
+    { id: 'checklist', icon: ListChecks, label: 'Checklist', desc: 'Task list', insert: '- [ ] ' },
+    { id: 'code', icon: Code2, label: 'Code Block', desc: 'Fenced code block', insert: '```\n\n```', cursorOffset: 4 },
+    { id: 'table', icon: Table, label: 'Table', desc: 'Insert table', insert: '| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n' },
+    { id: 'divider', icon: Minus, label: 'Divider', desc: 'Horizontal rule', insert: '\n---\n' },
+    { id: 'quote', icon: Quote, label: 'Blockquote', desc: 'Quote text', insert: '> ' },
+    { id: 'image', icon: Image, label: 'Image', desc: 'Image link', insert: '![alt text](url)' },
+    { id: 'link', icon: Link, label: 'Link', desc: 'Hyperlink', insert: '[link text](url)' },
+];
+
+const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebarVisible, saveStatus = 'saved', theme = 'dark', focusMode = false, onToggleFocusMode, onDuplicate, onPrint, isMobile = false, onShare, notes = [], onNavigateToNote }) => {
     const [viewMode, setViewMode] = useState('split');
     const [copiedCode, setCopiedCode] = useState(null);
+    const [tagInput, setTagInput] = useState('');
+    const [showTagInput, setShowTagInput] = useState(false);
     const textareaRef = useRef(null);
+    const tagInputRef = useRef(null);
+    const slashMenuRef = useRef(null);
+
+    const [slashMenu, setSlashMenu] = useState({ show: false, filter: '', index: 0, pos: 0 });
 
     // Calculate word, character, line count, and reading time
     const { wordCount, charCount, lineCount, readingTime } = useMemo(() => {
@@ -74,6 +106,7 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
     }
 
     const noteFormat = activeNote.format || 'markdown';
+    const noteTags = Array.isArray(activeNote.tags) ? activeNote.tags : [];
 
     const onEditField = (field, value) => {
         onUpdateNote({
@@ -87,7 +120,177 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
         onEditField('format', noteFormat === 'markdown' ? 'text' : 'markdown');
     };
 
-    // Markdown formatting helper
+    const addTag = (raw) => {
+        const tag = raw.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+        if (tag && !noteTags.includes(tag)) {
+            onEditField('tags', [...noteTags, tag]);
+        }
+        setTagInput('');
+    };
+
+    const removeTag = (tagToRemove) => {
+        onEditField('tags', noteTags.filter(t => t !== tagToRemove));
+    };
+
+    const handleTagKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(tagInput);
+        } else if (e.key === 'Backspace' && !tagInput && noteTags.length > 0) {
+            removeTag(noteTags[noteTags.length - 1]);
+        } else if (e.key === 'Escape') {
+            setShowTagInput(false);
+            setTagInput('');
+        }
+    };
+
+    const filteredSlashCommands = useMemo(() => {
+        if (!slashMenu.filter) return SLASH_COMMANDS;
+        const f = slashMenu.filter.toLowerCase();
+        return SLASH_COMMANDS.filter(cmd =>
+            cmd.label.toLowerCase().includes(f) || cmd.desc.toLowerCase().includes(f)
+        );
+    }, [slashMenu.filter]);
+
+    const insertSlashCommand = useCallback((cmd) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const text = activeNote.content;
+        const slashStart = slashMenu.pos;
+        const slashEnd = textarea.selectionStart;
+
+        const before = text.substring(0, slashStart);
+        const after = text.substring(slashEnd);
+        const newText = before + cmd.insert + after;
+        const cursorPos = cmd.cursorOffset
+            ? slashStart + cmd.cursorOffset
+            : slashStart + cmd.insert.length;
+
+        onEditField('content', newText);
+        setSlashMenu({ show: false, filter: '', index: 0, pos: 0 });
+
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(cursorPos, cursorPos);
+        }, 0);
+    }, [activeNote?.content, slashMenu.pos, onEditField]);
+
+    const handleContentChange = useCallback((e) => {
+        const textarea = e.target;
+        const value = textarea.value;
+        const cursorPos = textarea.selectionStart;
+
+        onEditField('content', value);
+
+        if (slashMenu.show) {
+            const typed = value.substring(slashMenu.pos, cursorPos);
+            if (typed.includes(' ') || typed.includes('\n') || cursorPos <= slashMenu.pos) {
+                setSlashMenu({ show: false, filter: '', index: 0, pos: 0 });
+            } else {
+                setSlashMenu(prev => ({ ...prev, filter: typed.replace('/', ''), index: 0 }));
+            }
+            return;
+        }
+
+        const lineStart = value.lastIndexOf('\n', cursorPos - 2) + 1;
+        const lineBeforeCursor = value.substring(lineStart, cursorPos);
+        if (lineBeforeCursor === '/' && noteFormat === 'markdown') {
+            setSlashMenu({ show: true, filter: '', index: 0, pos: cursorPos - 1 });
+        }
+    }, [slashMenu.show, slashMenu.pos, noteFormat, onEditField]);
+
+    const handleSlashKeyDown = useCallback((e) => {
+        if (!slashMenu.show) return false;
+        const cmds = filteredSlashCommands;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSlashMenu(prev => ({ ...prev, index: (prev.index + 1) % cmds.length }));
+            return true;
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSlashMenu(prev => ({ ...prev, index: (prev.index - 1 + cmds.length) % cmds.length }));
+            return true;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            if (cmds.length > 0) {
+                insertSlashCommand(cmds[slashMenu.index] || cmds[0]);
+            }
+            return true;
+        }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            setSlashMenu({ show: false, filter: '', index: 0, pos: 0 });
+            return true;
+        }
+        return false;
+    }, [slashMenu, filteredSlashCommands, insertSlashCommand]);
+
+    const [isDragging, setIsDragging] = useState(false);
+
+    const processImageFile = useCallback((file) => {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new window.Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxW = 800;
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = (h * maxW) / w; w = maxW; }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/webp', 0.8);
+
+                const textarea = textareaRef.current;
+                if (!textarea) return;
+                const pos = textarea.selectionStart;
+                const text = activeNote.content;
+                const imgMd = `\n![${file.name || 'image'}](${dataUrl})\n`;
+                const newText = text.substring(0, pos) + imgMd + text.substring(pos);
+                onEditField('content', newText);
+
+                setTimeout(() => {
+                    const newPos = pos + imgMd.length;
+                    textarea.focus();
+                    textarea.setSelectionRange(newPos, newPos);
+                }, 0);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }, [activeNote?.content, onEditField]);
+
+    const handlePaste = useCallback((e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                e.preventDefault();
+                processImageFile(item.getAsFile());
+                return;
+            }
+        }
+    }, [processImageFile]);
+
+    const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const files = e.dataTransfer?.files;
+        if (files?.length > 0) {
+            for (const file of files) {
+                if (file.type.startsWith('image/')) {
+                    processImageFile(file);
+                    return;
+                }
+            }
+        }
+    }, [processImageFile]);
+
     const insertFormatting = useCallback((prefix, suffix = prefix) => {
         const textarea = textareaRef.current;
         if (!textarea) return;
@@ -371,14 +574,47 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
         h2: ({ children }) => <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '1.25em', marginBottom: '0.5em', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.3em' }}>{children}</h2>,
         h3: ({ children }) => <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '1em', marginBottom: '0.5em', color: 'var(--text-primary)' }}>{children}</h3>,
         h4: ({ children }) => <h4 style={{ fontSize: '1rem', fontWeight: 600, marginTop: '1em', marginBottom: '0.5em', color: 'var(--text-primary)' }}>{children}</h4>,
-        // Paragraphs
-        p: ({ children }) => <p style={{ marginBottom: '1em', lineHeight: 1.7, color: 'var(--text-primary)' }}>{children}</p>,
+        p: ({ children }) => {
+            const processChildren = (kids) => {
+                return React.Children.map(kids, child => {
+                    if (typeof child !== 'string') return child;
+                    const parts = child.split(/(\[\[[^\]]+\]\])/g);
+                    if (parts.length === 1) return child;
+                    return parts.map((part, i) => {
+                        const wikiMatch = part.match(/^\[\[([^\]]+)\]\]$/);
+                        if (wikiMatch) {
+                            const linkTitle = wikiMatch[1];
+                            const targetNote = notes.find(n => n.title.toLowerCase() === linkTitle.toLowerCase());
+                            return (
+                                <a
+                                    key={i}
+                                    href="#"
+                                    className={`wiki-link ${targetNote ? '' : 'broken'}`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        if (targetNote && onNavigateToNote) {
+                                            onNavigateToNote(targetNote.id);
+                                        }
+                                    }}
+                                    title={targetNote ? `Go to: ${targetNote.title}` : `Note not found: ${linkTitle}`}
+                                >
+                                    {linkTitle}
+                                </a>
+                            );
+                        }
+                        return part;
+                    });
+                });
+            };
+            return <p style={{ marginBottom: '1em', lineHeight: 1.7, color: 'var(--text-primary)' }}>{processChildren(children)}</p>;
+        },
         // Lists
         ul: ({ children }) => <ul style={{ paddingLeft: '2em', marginBottom: '1em' }}>{children}</ul>,
         ol: ({ children }) => <ol style={{ paddingLeft: '2em', marginBottom: '1em' }}>{children}</ol>,
         li: ({ children }) => <li style={{ marginBottom: '0.5em', color: 'var(--text-primary)' }}>{children}</li>,
-        // Links
-        a: ({ href, children }) => <a href={href} style={{ color: 'var(--primary-color)', textDecoration: 'none' }} target="_blank" rel="noopener noreferrer">{children}</a>,
+        a: ({ href, children }) => (
+            <a href={href} style={{ color: 'var(--primary-color)', textDecoration: 'none' }} target="_blank" rel="noopener noreferrer">{children}</a>
+        ),
         // Blockquotes
         blockquote: ({ children }) => (
             <blockquote style={{
@@ -566,6 +802,61 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                 </div>
             )}
 
+            <div className="tag-bar">
+                <button
+                    className={`icon-btn ${showTagInput ? 'active' : ''}`}
+                    onClick={() => {
+                        setShowTagInput(!showTagInput);
+                        if (!showTagInput) {
+                            setTimeout(() => tagInputRef.current?.focus(), 50);
+                        }
+                    }}
+                    title="Tags"
+                    style={{ flexShrink: 0 }}
+                >
+                    <Tag size={14} />
+                </button>
+                {noteTags.map(tag => (
+                    <span key={tag} className="tag-chip" style={{ '--tag-color': getTagColor(tag) }}>
+                        {tag}
+                        <button
+                            className="tag-remove"
+                            onClick={() => removeTag(tag)}
+                            aria-label={`Remove tag ${tag}`}
+                        >
+                            <X size={10} />
+                        </button>
+                    </span>
+                ))}
+                {showTagInput && (
+                    <input
+                        ref={tagInputRef}
+                        type="text"
+                        className="tag-input"
+                        placeholder="Add tag..."
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={handleTagKeyDown}
+                        onBlur={() => {
+                            if (tagInput.trim()) addTag(tagInput);
+                            setShowTagInput(false);
+                        }}
+                        maxLength={24}
+                    />
+                )}
+                {!showTagInput && noteTags.length === 0 && (
+                    <span
+                        style={{ fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        onClick={() => {
+                            setShowTagInput(true);
+                            setTimeout(() => tagInputRef.current?.focus(), 50);
+                        }}
+                    >
+                        Add tags...
+                    </span>
+                )}
+            </div>
+
             <div style={{
                 flex: 1,
                 display: 'flex',
@@ -579,12 +870,20 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                         borderRight: isSplit ? '2px solid #3b82f6' : 'none',
                         display: 'flex',
                         flexDirection: 'column',
+                        position: 'relative',
                     }}>
                         <textarea
                             ref={textareaRef}
                             value={activeNote.content}
-                            onChange={(e) => onEditField('content', e.target.value)}
-                            placeholder={noteFormat === 'markdown' ? 'Type your markdown here...' : 'Type your text here...'}
+                            onChange={handleContentChange}
+                            onKeyDown={(e) => {
+                                if (handleSlashKeyDown(e)) return;
+                            }}
+                            onPaste={handlePaste}
+                            onDrop={handleDrop}
+                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                            onDragLeave={() => setIsDragging(false)}
+                            placeholder={noteFormat === 'markdown' ? 'Type your markdown here... (try "/" for commands)' : 'Type your text here...'}
                             style={{
                                 width: '100%',
                                 flex: 1,
@@ -600,6 +899,55 @@ const Editor = ({ activeNote, onUpdateNote, onDownload, onToggleSidebar, sidebar
                                 boxSizing: 'border-box',
                             }}
                         />
+                        {isDragging && (
+                            <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(59, 130, 246, 0.08)',
+                                border: '2px dashed var(--primary-color)',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--primary-color)',
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                pointerEvents: 'none',
+                                zIndex: 10,
+                            }}>
+                                Drop image here
+                            </div>
+                        )}
+                        {slashMenu.show && filteredSlashCommands.length > 0 && (
+                            <div
+                                ref={slashMenuRef}
+                                className="slash-menu"
+                                style={{
+                                    position: 'absolute',
+                                    top: '60px',
+                                    left: '32px',
+                                }}
+                            >
+                                <div className="slash-menu-header">Commands</div>
+                                {filteredSlashCommands.map((cmd, i) => (
+                                    <button
+                                        key={cmd.id}
+                                        className={`slash-menu-item ${i === slashMenu.index ? 'active' : ''}`}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            insertSlashCommand(cmd);
+                                        }}
+                                        onMouseEnter={() => setSlashMenu(prev => ({ ...prev, index: i }))}
+                                    >
+                                        <cmd.icon size={16} />
+                                        <div className="slash-menu-item-text">
+                                            <span className="slash-menu-item-label">{cmd.label}</span>
+                                            <span className="slash-menu-item-desc">{cmd.desc}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

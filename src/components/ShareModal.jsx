@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Share2, Copy, Check, AlertCircle, Link2, X, Clock, Loader2 } from 'lucide-react';
+import { Share2, Copy, Check, AlertCircle, Link2, X, Clock, Loader2, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { createShareLink, EXPIRE_OPTIONS } from '../lib/sharing';
 
 const ShareModal = ({ isOpen, onClose, note }) => {
@@ -8,7 +8,9 @@ const ShareModal = ({ isOpen, onClose, note }) => {
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
     const [expire, setExpire] = useState('1week');
-    const [step, setStep] = useState('options'); // 'options' | 'generating' | 'success' | 'error'
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [step, setStep] = useState('options');
 
     useEffect(() => {
         if (!isOpen) {
@@ -19,6 +21,8 @@ const ShareModal = ({ isOpen, onClose, note }) => {
                 setCopied(false);
                 setStep('options');
                 setExpire('1week');
+                setPassword('');
+                setShowPassword(false);
             }, 200);
         }
     }, [isOpen]);
@@ -32,7 +36,7 @@ const ShareModal = ({ isOpen, onClose, note }) => {
             title: note.title,
             content: note.content,
             format: note.format || 'markdown'
-        }, { expire });
+        }, { expire, password: password || undefined });
 
         setLoading(false);
 
@@ -107,6 +111,48 @@ const ShareModal = ({ isOpen, onClose, note }) => {
                             <div className="share-info-box">
                                 <p>🔒 <strong>End-to-end encrypted</strong></p>
                                 <p>Only people with the link can read your note</p>
+                            </div>
+
+                            <div className="share-option-group">
+                                <label className="share-option-label">
+                                    <Lock size={16} />
+                                    Password Protection (optional)
+                                </label>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Leave empty for no password"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 40px 10px 12px',
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border-subtle)',
+                                            borderRadius: '6px',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '0.85rem',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                        }}
+                                    />
+                                    {password && (
+                                        <button
+                                            type="button"
+                                            className="icon-btn"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)' }}
+                                        >
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    )}
+                                </div>
+                                {password && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: '6px' }}>
+                                        <ShieldCheck size={13} />
+                                        <span>Viewers will need this password to read the note</span>
+                                    </div>
+                                )}
                             </div>
 
                             <button

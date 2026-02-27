@@ -5,6 +5,7 @@ import './styles/index.css'
 import './styles/components.css'
 import './styles/markdown.css'
 import './styles/alerts.css'
+import './styles/shared-viewer.css'
 
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
